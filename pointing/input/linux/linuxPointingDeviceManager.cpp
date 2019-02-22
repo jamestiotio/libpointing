@@ -398,7 +398,7 @@ namespace pointing {
         unsigned char *ptr = (unsigned char*)&ie;
         pdd->buttons = ptr[0] & 7; // 3 bits only
         dx = (char)ptr[1];
-        dy = (char)ptr[2];
+        dy = -(char)ptr[2];
       }
       hasRead++;
     }
