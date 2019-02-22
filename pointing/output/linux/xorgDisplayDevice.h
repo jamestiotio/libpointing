@@ -18,6 +18,7 @@
 
 #include <pointing/output/DisplayDevice.h>
 
+#include <X11/extensions/Xrandr.h>
 #include <X11/Xlib.h>
 
 namespace pointing {
@@ -25,12 +26,23 @@ namespace pointing {
   class xorgDisplayDevice : public DisplayDevice {
 
     Display *dpy ;
+    int screen;
+    Window root;
+    XRRScreenResources *res;
+    XRROutputInfo* output_info;
+    
+    int displayID;
 
     typedef enum {NOTHING=0, BOUNDS=1, SIZE=2, REFRESHRATE=4} cachedinfo ;
     int cached ;
     DisplayDevice::Bounds cached_bounds ;
     DisplayDevice::Size cached_size ;
     double cached_refreshrate ;
+    
+    XRRModeInfo* get_mode_info(RRMode mode);
+    bool get_bounds(int* width, int* height, int* x, int* y);
+    int get_any_display_id();
+    void initialize();
 
   public:
   

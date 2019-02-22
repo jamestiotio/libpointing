@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 
 #include <iostream>
+#include <sstream>
 
 #define BUFFER_SIZE 128
 #define OCNE(X) ((XRROutputChangeNotifyEvent*)X)
@@ -49,77 +50,101 @@ error_handler(void) {
 
 void *xorgDisplayDeviceManager::eventloop(void * /* context */)
 {
-  //xorgDisplayDeviceManager *self = (xorgDisplayDeviceManager *)context;
-  while (1)
-  {
-    XEvent ev;
-    Display *dpy;
-    char buf[BUFFER_SIZE];
-    uid_t uid;
-
-    if (((uid = getuid()) == 0) || uid != geteuid())
-      xerror("May not run as root\n");
-
-    if ((dpy = XOpenDisplay(NULL)) == NULL)
-      xerror("Cannot open display\n");
-
-    XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
-    XSync(dpy, False);
-    XSetIOErrorHandler((XIOErrorHandler) error_handler);
-    while(1) {
-      if (!XNextEvent(dpy, &ev)) {
-        std::cout << "haha" << std::endl;
-        XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
-                                                              OCNE(&ev)->window);
-        if (resources == NULL) {
-          fprintf(stderr, "Could not get screen resources\n");
-          continue;
-        }
-
-        XRROutputInfo *info = XRRGetOutputInfo(OCNE(&ev)->display, resources,
-                                               OCNE(&ev)->output);
-        if (info == NULL) {
-          XRRFreeScreenResources(resources);
-          fprintf(stderr, "Could not get output info\n");
-          continue;
-        }
-
-        std::cout << "String: " << DisplayString(dpy) << std::endl;
-
-        snprintf(buf, BUFFER_SIZE, "%s %s", info->name,
-                 con_actions[info->connection]);
-        //if (verbose) {
-          printf("Event: %s %s\n", info->name,
-                 con_actions[info->connection]);
-          printf("Time: %lu\n", info->timestamp);
-          if (info->crtc == 0) {
-            printf("Size: %lumm x %lumm\n", info->mm_width, info->mm_height);
-          }
-          else {
-            printf("CRTC: %lu\n", info->crtc);
-            XRRCrtcInfo *crtc = XRRGetCrtcInfo(dpy, resources, info->crtc);
-            if (crtc != NULL) {
-              printf("Size: %dx%d\n", crtc->width, crtc->height);
-              XRRFreeCrtcInfo(crtc);
+    //xorgDisplayDeviceManager *self = (xorgDisplayDeviceManager *)context;
+    while (1)
+    {
+        XEvent ev;
+        Display *dpy;
+        char buf[BUFFER_SIZE];
+        uid_t uid;
+        
+        if (((uid = getuid()) == 0) || uid != geteuid())
+            xerror("May not run as root\n");
+        
+        if ((dpy = XOpenDisplay(NULL)) == NULL)
+            xerror("Cannot open display\n");
+        
+        XRRSelectInput(dpy, DefaultRootWindow(dpy), RROutputChangeNotifyMask);
+        XSync(dpy, False);
+        XSetIOErrorHandler((XIOErrorHandler) error_handler);
+        while(1) {
+            if (!XNextEvent(dpy, &ev)) {
+                std::cout << "haha" << std::endl;
+                XRRScreenResources *resources = XRRGetScreenResources(OCNE(&ev)->display,
+                                                                      OCNE(&ev)->window);
+                if (resources == NULL) {
+                    fprintf(stderr, "Could not get screen resources\n");
+                    continue;
+                }
+                
+                XRROutputInfo *info = XRRGetOutputInfo(OCNE(&ev)->display, resources,
+                                                       OCNE(&ev)->output);
+                if (info == NULL) {
+                    XRRFreeScreenResources(resources);
+                    fprintf(stderr, "Could not get output info\n");
+                    continue;
+                }
+                
+                std::cout << "String: " << DisplayString(dpy) << std::endl;
+                
+                snprintf(buf, BUFFER_SIZE, "%s %s", info->name,
+                         con_actions[info->connection]);
+                //if (verbose) {
+                printf("Event: %s %s\n", info->name,
+                       con_actions[info->connection]);
+                printf("Time: %lu\n", info->timestamp);
+                if (info->crtc == 0) {
+                    printf("Size: %lumm x %lumm\n", info->mm_width, info->mm_height);
+                }
+                else {
+                    printf("CRTC: %lu\n", info->crtc);
+                    XRRCrtcInfo *crtc = XRRGetCrtcInfo(dpy, resources, info->crtc);
+                    if (crtc != NULL) {
+                        printf("Size: %dx%d\n", crtc->width, crtc->height);
+                        XRRFreeCrtcInfo(crtc);
+                    }
+                }
+                //}
+                XRRFreeScreenResources(resources);
+                XRRFreeOutputInfo(info);
             }
-          }
-        //}
-        XRRFreeScreenResources(resources);
-        XRRFreeOutputInfo(info);
-      }
+        }
+        // Each second
+        usleep(1000000);
     }
-    // Each second
-    usleep(1000000);
-  }
-  return 0;
+    return 0;
 }
 
 xorgDisplayDeviceManager::xorgDisplayDeviceManager() {
-  int ret = pthread_create(&thread, NULL, eventloop, (void *)this);
-  if (ret < 0)
-  {
-    perror("xorgDisplayDeviceManager::xorgDisplayDeviceManager");
-    throw std::runtime_error("xorgDisplayDeviceManager: pthread_create failed");
-  }
+    Display* dpy = XOpenDisplay(NULL);
+    int screen = DefaultScreen(dpy);
+    Window root = RootWindow(dpy, screen);
+    XRRScreenResources *res = XRRGetScreenResources(dpy, root);
+    
+    for (int o = 0; o < res->noutput; o++) {
+        XRROutputInfo *output_info = XRRGetOutputInfo(dpy, res, res->outputs[o]);
+        
+        if (output_info->connection == RR_Connected) {
+            DisplayDeviceDescriptor desc;
+            std::stringstream uri;
+            uri << "xorgdisplay:/" << o;
+            
+            desc.devURI = uri.str();
+            desc.name = std::string(output_info->name);
+            
+            addDevice(desc);
+        }
+        
+        XRRFreeOutputInfo(output_info);
+    }
+    
+    XRRFreeScreenResources(res);
+    
+    /*int ret = pthread_create(&thread, NULL, eventloop, (void *)this);
+    if (ret < 0)
+    {
+        perror("xorgDisplayDeviceManager::xorgDisplayDeviceManager");
+        throw std::runtime_error("xorgDisplayDeviceManager: pthread_create failed");
+    }*/
 }
 }

@@ -54,9 +54,9 @@ namespace pointing {
         #ifdef _WIN32
             singleManager = new winDisplayDeviceManager();
         #endif
-
+            
         #ifdef __linux__
-            singleManager = new DisplayDeviceManager();
+            singleManager = new xorgDisplayDeviceManager();
         #endif
         }
         return singleManager;
@@ -75,8 +75,9 @@ namespace pointing {
     {
         std::pair<std::set<DisplayDeviceDescriptor>::iterator,bool> ret;
         ret = descriptors.insert(descriptor);
-        if (ret.second) // If this device was not already there
+        if (ret.second) { // If this device was not already there
             callCallbackFunctions(descriptor, true);
+        }
     }
 
     void DisplayDeviceManager::removeDevice(DisplayDeviceDescriptor &descriptor)
