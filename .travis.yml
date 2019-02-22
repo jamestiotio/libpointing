@@ -76,7 +76,9 @@ before_deploy:
 
 deploy:
     provider: releases
-    api_key: $GITHUB_API_KEY
+    # api_key: $GITHUB_API_KEY
+    auth_token:
+        secure: xxgI27Ht/bQ+zgE+1E36ch7Ydnsv7IiAQZ7OBdS/cOA5X01Py7zRiQ/+upYEQgXp
     file:
         - "building-and-packaging/linux/debian/*.deb"
         - "building-and-packaging/mac/*.tar.gz"
