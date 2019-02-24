@@ -2,12 +2,12 @@ javac:
 	javac -encoding UTF-8 org/libpointing/*.java
 
 javah:
-	javah -jni -d ./native/ org.libpointing.DisplayDevice
-	javah -jni -d ./native/ org.libpointing.PointingDevice
-	javah -jni -d ./native/ org.libpointing.PointingDeviceManager
-	javah -jni -d ./native/ org.libpointing.DisplayDeviceManager
-	javah -jni -d ./native/ org.libpointing.TransferFunction
-	javah -jni -d ./native/ org.libpointing.TimeStamp
+	javac -h native org/libpointing/DisplayDevice.java
+	javac -h native org/libpointing/PointingDevice.java
+	javac -h native org/libpointing/PointingDeviceManager.java
+	javac -h native org/libpointing/DisplayDeviceManager.java
+	javac -h native org/libpointing/TransferFunction.java
+	javac -h native org/libpointing/TimeStamp.java
 
 clean:
 	rm org/libpointing/*.class
