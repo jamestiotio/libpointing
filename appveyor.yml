@@ -86,7 +86,7 @@ deploy:
     provider: GitHub
     description: 'New release of libpointing'
     auth_token:
-      secure: 1UNYGNi45HjR94wYYU6mMM1n9M2VE0gIVcyEjjJgixN1zkWxd16B/Bwz6PDksRv3
+      secure: xxgI27Ht/bQ+zgE+1E36ch7Ydnsv7IiAQZ7OBdS/cOA5X01Py7zRiQ/+upYEQgXp
     on:
       appveyor_repo_tag: true
 
