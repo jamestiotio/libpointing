@@ -28,6 +28,7 @@ env:
     - GH_REPO_NAME: libpointing
     - DOXYFILE: $TRAVIS_BUILD_DIR/building-and-packaging/Doxyfile
     - GH_REPO_REF: github.com/INRIA/libpointing.git
+    - secure: "MvGtK11O/ueTSnM4KKdqNHnx7HjR7xgdvBJmUrvyIAjn9ZXftcKq96mv/wU0dF5RLLYQwNpAJSc28+ItpyBB0+h2FFRGdRo12Pov78VDnlMYV07oXDHjja0RtKH+aHKsfqSmB0yxzhEsorOtIDdYJA28147ZmnquzLTFytBc0Id7WwkaR9CsNiAsfQF3BzbknaAZ2CBvAlwFXRmb7Bj7V4adfXqeB57ZWbKIf1tmmZRhEmAK6BIT9O/qQp5266ppxWGsTaNhsl3x0NkPe/fX/9brNTQ2FAaYurZK73GZGBPNwt73lRBbNms8UPXCzzT9f1YS1xBObUto5pwjbUpzqKw33kmwfdSG/vII/6yD1f7ZXrspo+q/W+vneSnaPAU76BLqIzSmstxye6Lg8gr673H6C87PpzZANvx+IlyCfLrohtK5arB8I4hu+M1hkUibMX9qtOSjIyFIdg5yQO7cS8r5i4lCVnPTxEz9iq7aXXkYmnBDXnJ4Ay2JD6JjaBD6C91VCvwyZ99XDFCWn3HY2tYY1qXxLCDZu9pxCRNwYwmevFzJx0WJxYr3HnT2wgBTwmuQ7wu/fmOtXgthGb+ymlScBoisS8a1yIAhm4RI68Byjclzy/6sZLjgevDzCb4LNfB94+SsOdrNZd6oPM9CES3NTYaC10L/hlZw361xlDE="
 
 before_install:
     - |
