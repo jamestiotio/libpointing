@@ -100,6 +100,28 @@ namespace pointing {
     throw std::runtime_error(msg.str()) ;
   }
 
+  int PointingDevice::mm2counts(double millimeters) const {
+    return (int)(millimeters * getResolution() / 25.4);
+  }
+
+  double PointingDevice::counts2mm(int counts) const {
+    if (getResolution() > 0)
+      return counts * 25.4 / getResolution();
+    else
+      return 0;
+  }
+
+  int PointingDevice::in2counts(double inches) const {
+    return (int)(inches * getResolution());
+  }
+
+  double PointingDevice::counts2in(int counts) const {
+    if (getResolution() > 0)
+      return counts / getResolution();
+    else
+      return 0;
+  }
+
   void
   PointingDevice::idle(int milliseconds) {
 #ifdef _WIN32

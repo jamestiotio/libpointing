@@ -147,15 +147,34 @@ namespace pointing {
      */
     virtual URI getURI(bool expanded=false, bool crossplatform=false) const = 0 ;
 
+
     /**
-     * Not implemented in the current version
+     * @brief Converts millimeters to counts, by taking into account device resolution
+     * @param number of millimeters to convert
+     * @return number of counts corresponding to the number of millimeters.
      */
-    //@{
     int mm2counts(double millimeters) const ;
+
+     /**
+     * @brief Converts counts to millimeters, by taking into account device resolution
+     * @param number of counts to convert
+     * @return number of millimeters corresponding to the number of counts or 0 is device resolution is 0
+     */   
     double counts2mm(int counts) const ;
+
+    /**
+     * @brief Converts inches to counts, by taking into account device resolution
+     * @param number of inches to convert
+     * @return number of counts corresponding to the number of inches.
+     */
     int in2counts(double inches) const ;
+
+    /**
+     * @brief Converts counts to inches, by taking into account device resolution
+     * @param number of counts to convert
+     * @return number of inches corresponding to the number of counts or 0 is device resolution is 0
+     */    
     double counts2in(int counts) const ;
-    //@}
 
     /**
      * @brief Sets the callback function which is called when device events occur.
