@@ -8,14 +8,16 @@
   },
   "scripts": {
     "install": "cd libpointing && npm install",
-    "build": "cd libpointing && node-gyp configure build",
+    "clean": "cd libpointing && node-gyp clean",
+    "build": "cd libpointing && node-gyp rebuild",
     "lint": "jshint *.js server/*.js client/*.js"
   },
-  "author": "Izzat Mukhanov",
+  "author": "Etienne Orieux",
   "license": "GPL-2.0",
   "private": true,
   "dependencies": {
     "ncp": "^2.0.0",
+    "node-addon-api": "^2.0.0",
     "nw-builder": "^3.5.7"
   }
 }

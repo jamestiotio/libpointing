@@ -17,9 +17,12 @@
          "name": "Géry Casiez"
       }
    ],
-   "dependencies": {
-      "nan": "^2.12.1"
-   },
+   "devDependencies": {
+    "node-gyp": "^6.1.0"
+    },
+    "dependencies": {
+      "node-addon-api": "^2.0.0"
+    },
    "main": "build/Release/pointing.node",
    "license": "GPL-2.0-or-later",
    "repository": {

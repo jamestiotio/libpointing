@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/nsystempointeracceleration.cc
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -12,10 +12,8 @@
  * the GNU General Public License version 2 or any later version.
  *
  */
- 
+
 #include "nsystempointeracceleration.h"
-#include <iostream>
-#include <pointing/pointing.h>
 
 #ifdef __APPLE__
 #include <pointing/transferfunctions/osx/osxSystemPointerAcceleration.h>
@@ -25,106 +23,109 @@
 #include <pointing/transferfunctions/windows/winSystemPointerAcceleration.h>
 #endif
 
-using namespace v8;
 using namespace pointing;
 
-Nan::Persistent<Function> NSystemPointerAcceleration::constructor;
+Napi::FunctionReference NSystemPointerAcceleration::constructor;
 
-NAN_METHOD(NSystemPointerAcceleration::get)
-{
-  Local<Object> result = Nan::New<Object>();
+Napi::Value NSystemPointerAcceleration::get(const Napi::CallbackInfo& info){
+  Napi::Env env = info.Env();
+  Napi::Object result = Napi::Object::New(env);
 #ifdef __APPLE__
   double res = 0;
   osxSystemPointerAcceleration acc;
-  Local<Value> tarStr = Nan::New("mouse").ToLocalChecked();
+  Napi::Value tarStr = Napi::Value::From(env, "mouse");
   if (info.Length())
   {
-    Local<Object> argsObj = info[0]->ToObject();
-    if (Nan::Has(argsObj, Nan::New("target").ToLocalChecked()).FromMaybe(false))
-      tarStr = Nan::Get(argsObj, Nan::New("target").ToLocalChecked()).ToLocalChecked();
-    Nan::Utf8String target(tarStr->ToString());
-    res = acc.get(*target);
+    Napi::Object argsObj = info[0].As<Napi::Object>();
+    if (argsObj.Has("target"))
+      tarStr = argsObj.Get("target");
+    std::string target(tarStr.ToString());
+    res = acc.get(target.c_str());
   }
   else
     res = acc.get();
 
-  result->Set(Nan::New("value").ToLocalChecked(), Nan::New(res));
-  result->Set(Nan::New("target").ToLocalChecked(), tarStr);
-  
+  result.Set("value", Napi::Number::New(env, res));
+  result.Set("target", tarStr);
+
 #elif defined __linux__
 	xorgSystemPointerAcceleration acc;
 	int num = 2, den = 1, thr = 4;
 	acc.get(&num, &den, &thr);
-  result->Set(Nan::New("numerator").ToLocalChecked(), Nan::New(num));
-  result->Set(Nan::New("denominator").ToLocalChecked(), Nan::New(den));
-  result->Set(Nan::New("threshold").ToLocalChecked(), Nan::New(thr));
+  result.Set("numerator", Napi::Number::New(env, num));
+  result.Set("denominator", Napi::Number::New(env, den));
+  result.Set("threshold", Napi::Number::New(env, thr));
 #elif defined(_WIN32)
   winSystemPointerAcceleration acc;
   std::string version;
   int sliderPosition;
   bool epp;
   acc.get(&version, &sliderPosition, &epp);
-  result->Set(Nan::New("version").ToLocalChecked(), Nan::New(version).ToLocalChecked());
-  result->Set(Nan::New("sliderPosition").ToLocalChecked(), Nan::New(sliderPosition));
-  result->Set(Nan::New("enhancePointerPrecision").ToLocalChecked(), Nan::New(epp));
+  result.Set("version", Napi::String::New(env, version));
+  result.Set("sliderPosition", Napi::Number::New(env, sliderPosition));
+  result.Set("enhancePointerPrecision", Napi::Number::New(env, epp));
 #endif
-  info.GetReturnValue().Set(result);
+  return result;
 }
 
-NAN_METHOD(NSystemPointerAcceleration::set)
-{
-  Local<Object> argsObj = info[0]->ToObject();
+void NSystemPointerAcceleration::set(const Napi::CallbackInfo& info){
+  Napi::Object argsObj = info[0].As<Napi::Object>();
+
 #ifdef __APPLE__
-  if (Nan::Has(argsObj, Nan::New("value").ToLocalChecked()).FromMaybe(false))
+  if (argsObj.Has("value"))
   {
-    double value = Nan::Get(argsObj, Nan::New("value").ToLocalChecked()).ToLocalChecked()->NumberValue();
-    Local<Value> tarStr = Nan::New("mouse").ToLocalChecked();
-    if (Nan::Has(argsObj, Nan::New("target").ToLocalChecked()).FromMaybe(false))
-      tarStr = Nan::Get(argsObj, Nan::New("target").ToLocalChecked()).ToLocalChecked();
-    Nan::Utf8String target(tarStr->ToString());
+    Napi::Env env = info.Env();
+    double value = argsObj.Get("value").As<Napi::Number>().DoubleValue();
+    Napi::Value tarStr = Napi::Value::From(env, "mouse");
+
+    Napi::Object argsObj = info[0].As<Napi::Object>();
+    if (argsObj.Has("target"))
+      tarStr = argsObj.Get("target");
+    std::string target(tarStr.ToString());
     osxSystemPointerAcceleration acc;
-    acc.set(value, *target);
+    acc.set(value, target.c_str());
   }
 #elif defined(__linux__)
-  int num = Nan::Get(argsObj, Nan::New("numerator").ToLocalChecked()).ToLocalChecked()->IntegerValue();
-  int den = Nan::Get(argsObj, Nan::New("denominator").ToLocalChecked()).ToLocalChecked()->IntegerValue();
-  int thr = Nan::Get(argsObj, Nan::New("threshold").ToLocalChecked()).ToLocalChecked()->IntegerValue();
-  
+  int num = argsObj.Get("numerator").As<Napi::Number>().Uint32Value();
+  int den = argsObj.Get("denominator").As<Napi::Number>().Uint32Value();
+  int thr = argsObj.Get("threshold").As<Napi::Number>().Uint32Value();
+
   num = num ? num : 2;
   den = den ? den : 1;
   thr = thr ? thr : 4;
-  
+
 	xorgSystemPointerAcceleration acc;
 	acc.set(num, den, thr);
 #elif defined(_WIN32)
-  int sliderPosition = Nan::Get(argsObj, Nan::New("sliderPosition").ToLocalChecked()).ToLocalChecked()->IntegerValue();
-  bool epp = Nan::Get(argsObj, Nan::New("enhancePointerPrecision").ToLocalChecked()).ToLocalChecked()->BooleanValue();
+  int sliderPosition = argsObj.Get("sliderPosition").As<Napi::Number>().Uint32Value();
+  bool epp = argsObj.Get("enhancePointerPrecision").As<Napi::Boolean>().Value();
+
   winSystemPointerAcceleration acc;
   acc.set(sliderPosition, epp);
 #endif
-  info.GetReturnValue().Set(info.This());
 }
 
-NAN_METHOD(NSystemPointerAcceleration::New)
-{
-  if (info.IsConstructCall()) {
-    info.GetReturnValue().Set(info.This());
-  } 
-  else {
-    Local<Function> cons = Nan::New<Function>(constructor);
-    info.GetReturnValue().Set(Nan::NewInstance(cons).ToLocalChecked());
-  }
+NSystemPointerAcceleration::NSystemPointerAcceleration(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NSystemPointerAcceleration>(info){
+  Napi::HandleScope scope(info.Env());
 }
 
-NAN_MODULE_INIT(NSystemPointerAcceleration::Init)
-{
-  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("SystemPointerAcceleration").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
+Napi::Object NSystemPointerAcceleration::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
+  Napi::Function func = DefineClass(env, "SystemPointerAcceleration", {
+    InstanceMethod("set", &NSystemPointerAcceleration::set),
+    InstanceMethod("get", &NSystemPointerAcceleration::get)
+  });
 
-  Nan::SetPrototypeMethod(tpl, "get", get);
-  Nan::SetPrototypeMethod(tpl, "set", set);
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
 
-  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-  target->Set(Nan::New("SystemPointerAcceleration").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+  exports.Set("SystemPointerAcceleration", func);
+
+  return exports;
+}
+
+Napi::Object NSystemPointerAcceleration::NewInstance(Napi::Env env){
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({});
+  return scope.Escape(napi_value(obj)).ToObject();
 }

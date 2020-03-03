@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/ndisplaydevicemanager.h
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -12,28 +12,27 @@
  * the GNU General Public License version 2 or any later version.
  *
  */
- 
+
 #ifndef NDISPLAYDEVICEMANAGER_H
 #define NDISPLAYDEVICEMANAGER_H
 
-#include <nan.h>
+#include <napi.h>
 #include <map>
 #include <pointing/output/DisplayDeviceManager.h>
 
-class NDisplayDeviceManager : public Nan::ObjectWrap
+class NDisplayDeviceManager : public Napi::ObjectWrap<NDisplayDeviceManager>
 {
   public:
-    static NAN_MODULE_INIT(Init);
+    static Napi::Object Init(Napi::Env env, Napi::Object exports);
+    NDisplayDeviceManager(const Napi::CallbackInfo& info);
+    static Napi::Object NewInstance(Napi::Env env);
 
   private:
-  	static NAN_METHOD(New);
+    static Napi::FunctionReference constructor;
 
-  	static NAN_METHOD(addDeviceUpdateCallback);
-    static NAN_METHOD(removeDeviceUpdateCallback);
-
-    static NAN_GETTER(getDeviceList);
-
-  	static Nan::Persistent<v8::Function> constructor;
+    void addDeviceUpdateCallback(const Napi::CallbackInfo& info);
+    void removeDeviceUpdateCallback(const Napi::CallbackInfo& info);
+    Napi::Value getDeviceList(const Napi::CallbackInfo& info);
 
   	static void deviceUpdateCallback(void *context, const pointing::DisplayDeviceDescriptor &descriptor, bool wasAdded);
 };

@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/ntransferfunction.h
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -16,40 +16,38 @@
 #ifndef NTRANSFERFUNCTION_H
 #define NTRANSFERFUNCTION_H
 
-#include <nan.h>
+#include <napi.h>
 #include <pointing/transferfunctions/SubPixelFunction.h>
 #include "npointingdevice.h"
 #include "ndisplaydevice.h"
 
-class NTransferFunction : public Nan::ObjectWrap
+class NTransferFunction : public Napi::ObjectWrap<NTransferFunction>
 {
   public:
-    static NAN_MODULE_INIT(Init);
+    static Napi::Object Init(Napi::Env env, Napi::Object exports);
+    NTransferFunction(const Napi::CallbackInfo& info);
+    static Napi::Object NewInstance(Napi::Env env, Napi::Value uri, Napi::Value input, Napi::Value output);
+    ~NTransferFunction();
 
   private:
-	  explicit NTransferFunction(std::string uri, NPointingDevice *ninput, NDisplayDevice *noutput);
-  	~NTransferFunction();
+    static Napi::FunctionReference constructor;
+    Napi::Value applyi(const Napi::CallbackInfo& info);
+    Napi::Value applyd(const Napi::CallbackInfo& info);
+    void clearState(const Napi::CallbackInfo& info);
+    void setSubPixeling(const Napi::CallbackInfo& info);
+    void setHumanResolution(const Napi::CallbackInfo& info);
+    void setCardinalitySize(const Napi::CallbackInfo& info);
 
-  	static NAN_METHOD(New);
-  	
-  	static NAN_METHOD(applyi);
-    static NAN_METHOD(applyd);
-    static NAN_METHOD(clearState);
-    static NAN_METHOD(setSubPixeling);
-    static NAN_METHOD(setHumanResolution);
-    static NAN_METHOD(setCardinalitySize);
+    Napi::Value getURI(const Napi::CallbackInfo& info);
+    Napi::Value getSubPixeling(const Napi::CallbackInfo& info);
+    Napi::Value getHumanResolution(const Napi::CallbackInfo& info);
+    Napi::Value getCardinality(const Napi::CallbackInfo& info);
+    Napi::Value getWidgetSize(const Napi::CallbackInfo& info);
 
-    static NAN_GETTER(getURI);
-    static NAN_GETTER(getSubPixeling);
-    static NAN_GETTER(getHumanResolution);
-    static NAN_GETTER(getCardinality);
-    static NAN_GETTER(getWidgetSize);
+    pointing::SubPixelFunction *func;
 
-  	static Nan::Persistent<v8::Function> constructor;
-
-  	pointing::SubPixelFunction *func;
-    Nan::Persistent<v8::Value> nInput;
-    Nan::Persistent<v8::Value> nOutput;
+    NPointingDevice* nInput;
+    NDisplayDevice* nOutput;
 };
 
 #endif // NTRANSFERFUNCTION_H

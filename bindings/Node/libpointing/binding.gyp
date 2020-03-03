@@ -2,8 +2,10 @@
   "targets": [
 	{
 	  "target_name": "pointing",
-	  "sources": [ 
-		"pointing/pointing.cc", 
+      "cflags!": [ "-fno-exceptions" ],
+      "cflags_cc!": [ "-fno-exceptions" ],
+	  "sources": [
+		"pointing/pointing.cc",
 		"pointing/npointingdevice.cc",
 		"pointing/ndisplaydevice.cc",
 		"pointing/ntransferfunction.cc",
@@ -21,7 +23,7 @@
 				 },
 				"include_dirs": [
 					'/usr/local/include',
-					"<!(node -e \"require('nan')\")"
+					"<!@(node -p \"require('node-addon-api').include\")"
 				],
 				'xcode_settings': {
 					'MACOSX_DEPLOYMENT_TARGET': '10.7',
@@ -34,12 +36,12 @@
 			['OS=="linux"', {
 				"link_settings": {
 				'libraries': [
-				   '-lpointing',
-				   '-L/usr/local/lib'
+				   '/usr/lib/pointing.so'
 				 ]},
 				"include_dirs": [
-					'/usr/local/include',
-					"<!(node -e \"require('nan')\")"
+                   '-lpointing',
+				   '-L/usr/local/lib',
+					"<!@(node -p \"require('node-addon-api').include\")"
 				]
 			}],
 			['OS=="win"', {
@@ -51,7 +53,7 @@
 								'-lhid',
 								'-luser32',
 								'-ladvapi32',
-								'../../../../pointing/Release/pointing.lib'
+                                '../../../../pointing/Release/pointing.lib'
 							]
 						}],
 						["target_arch == 'x64'", {
@@ -67,7 +69,7 @@
 				 },
 				"include_dirs": [
 					'../../..',
-					"<!(node -e \"require('nan')\")"
+                    "<!@(node -p \"require('node-addon-api').include\")"
 				],
 				'configurations': {
 					'Debug': {
@@ -88,6 +90,10 @@
 				"msvs_disabled_warnings": [ 4244, 4267 ],
 			}],
 		],
+      'dependencies': [
+          "<!(node -p \"require('node-addon-api').gyp\")"
+      ],
+      'defines': [ 'NAPI_DISABLE_CPP_EXCEPTIONS' ]
 	}
   ]
 }

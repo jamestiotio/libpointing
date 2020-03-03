@@ -8,19 +8,18 @@ Read this to learn how to write bindings
 	* Stable Node.js
 	* npm (Node package manager) (For ubuntu: `sudo apt-get install npm`)
 	* Python version > 2.7
-	* node-gyp (`npm install -g node-gyp`)
 
-2. Install libpointing and link it in *libpointing/binding.gyp* 
+2. Install libpointing and link it in *libpointing/binding.gyp*
 
-3. In the current folder install nan with `npm install nan`.
+3. Install node-addon-api with `npm run install`.
 
 ## Compilation
 
-* Run `node-gyp configure build` in the *libpointing* folder.
+* Run `npm run build`.
 
 ## Running
 
-You can run *consoleExample.js* to test the bindings with `node consoleExample.js`.
+You can run *consoleExample.js* to test the binding with `node consoleExample.js`.
 
 # Server app
 
@@ -42,7 +41,7 @@ Follow these instructions to build the nw-app for Windows:
 	* npm install nw-builder ncp
 
 1. In *libpointing*-folder:
-	* run `npm install nan`
+	* run `npm install`
 	* run `nw-gyp configure build --target={version}`, where version corresponds to the Node webkit version you want to use (like 0.35.5)
 
 1. In *Node/nw*-folder run `npm install`

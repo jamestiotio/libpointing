@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/npointingdevice.cc
  *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -14,214 +14,125 @@
  */
 
 #include "npointingdevice.h"
-#include <uv.h>
 
-using namespace v8;
 using namespace pointing;
 
-Nan::Persistent<Function> NPointingDevice::constructor;
+Napi::FunctionReference NPointingDevice::constructor;
 
-void NPointingDevice::callCallback(TimeStamp::inttime timestamp, int dx, int dy, int buttons)
-{
-  Nan::HandleScope scope;
-
-  Local<Value> argv[] = {
-          Nan::New<Number>(timestamp),
-          Nan::New<Number>(dx),
-          Nan::New<Number>(dy),
-          Nan::New<Number>(buttons)
-  };
-  
-  if (!callback.IsEmpty())
-  {
-    Nan::AsyncResource resource("libpointing:NPointingDevice::callCallback");
-    callback.Call(4, argv, &resource);
-  }
-}
-
-void NPointingDevice::pointingCallback(void *context, TimeStamp::inttime timestamp, int dx, int dy, int buttons)
-{
-#ifdef __APPLE__
+void NPointingDevice::pointingCallback(void *context, TimeStamp::inttime timestamp, int dx, int dy, int buttons){
   NPointingDevice *self = (NPointingDevice *)context;
-  self->callCallback(timestamp, dx, dy, buttons);
-#else
-  NPointingDevice *self = (NPointingDevice *)context;
+
   PointingReport *pr = new PointingReport();
   pr->timestamp = timestamp;
   pr->dx = dx;
   pr->dy = dy;
   pr->buttons = buttons;
-  
-  uv_mutex_lock(&self->pqueue_mutex);
-  self->pqueue_.push(pr);
-  uv_mutex_unlock(&self->pqueue_mutex);
-  uv_async_send(&self->async_);
-#endif
-}
 
-#ifndef __APPLE__
+  auto callback = []( Napi::Env env, Napi::Function jsCallback, PointingReport* pr) {
+    Napi::Number nTimestamp = Napi::Number::New(env, pr->timestamp);
+    Napi::Number nDx = Napi::Number::New(env, pr->dx);
+    Napi::Number nDy = Napi::Number::New(env, pr->dy);
+    Napi::Number nButtons = Napi::Number::New(env, pr->buttons);
 
-void NPointingDevice::asyncHandler(uv_async_t *handle)
-{
-  NPointingDevice *self = (NPointingDevice *)(handle->data);
+    jsCallback.Call({nTimestamp, nDx, nDy, nButtons});
+  };
 
-  uv_mutex_lock(&self->pqueue_mutex);
-  
-  while (!self->pqueue_.empty())
-  {
-    PointingReport *pr = self->pqueue_.front();
-    self->pqueue_.pop();
-    self->callCallback(pr->timestamp, pr->dx, pr->dy, pr->buttons);
-    delete pr;
-  }
-
-  uv_mutex_unlock(&self->pqueue_mutex);
-}
-
-#endif
-
-NPointingDevice::NPointingDevice(std::string uri)
-  :input(0)
-{
-  input = PointingDevice::create(uri);
-#ifndef __APPLE__
-  uv_mutex_init(&pqueue_mutex);
-  uv_loop_t *loop = uv_default_loop();
-  async_.data = this;
-  
-  uv_async_init(loop, &async_, (uv_async_cb)asyncHandler);
-#endif
+  self->tsfn.NonBlockingCall(pr, callback);
 }
 
 NPointingDevice::~NPointingDevice() {
-  //std::cerr << "~NPointingDevice" << std::endl;
+  // std::cerr << "~NPointingDevice" << std::endl;
   delete input;
 }
 
-NAN_MODULE_INIT(NPointingDevice::Init)
-{
-  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("PointingDevice").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
+Napi::Object NPointingDevice::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
 
-  Nan::SetPrototypeMethod(tpl, "setPointingCallback", setPointingCallback);
+  Napi::Function func = DefineClass(env, "PointingDevice", {
+    InstanceMethod("setPointingCallback", &NPointingDevice::setPointingCallback),
+    InstanceAccessor("vendorID", &NPointingDevice::getVendorID, NULL),
+    InstanceAccessor("productID", &NPointingDevice::getProductID, NULL),
+    InstanceAccessor("vendor", &NPointingDevice::getVendor, NULL),
+    InstanceAccessor("product", &NPointingDevice::getProduct, NULL),
+    InstanceAccessor("updateFrequency", &NPointingDevice::getUpdateFrequency, NULL),
+    InstanceAccessor("resolution", &NPointingDevice::getResolution, NULL),
+    InstanceAccessor("uri", &NPointingDevice::getURI, NULL),
+    InstanceAccessor("expandedUri", &NPointingDevice::getExpandedURI, NULL),
+    InstanceAccessor("active", &NPointingDevice::isActive, NULL)
+     //NULL = no setter on a read-only property.
+  });
 
-  Local<ObjectTemplate> itpl = tpl->InstanceTemplate();
-  Nan::SetAccessor(itpl, Nan::New("vendorID").ToLocalChecked(), getVendorID);
-  Nan::SetAccessor(itpl, Nan::New("productID").ToLocalChecked(), getProductID);
-  Nan::SetAccessor(itpl, Nan::New("vendor").ToLocalChecked(), getVendor);
-  Nan::SetAccessor(itpl, Nan::New("product").ToLocalChecked(), getProduct);
-  Nan::SetAccessor(itpl, Nan::New("updateFrequency").ToLocalChecked(), getUpdateFrequency);
-  Nan::SetAccessor(itpl, Nan::New("resolution").ToLocalChecked(), getResolution);
-  Nan::SetAccessor(itpl, Nan::New("uri").ToLocalChecked(), getURI);
-  Nan::SetAccessor(itpl, Nan::New("expandedUri").ToLocalChecked(), getExpandedURI);
-  Nan::SetAccessor(itpl, Nan::New("active").ToLocalChecked(), isActive);
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
 
-  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-  Nan::Set(target, Nan::New("PointingDevice").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+  exports.Set("PointingDevice", func);
+
+  return exports;
 }
 
-NAN_METHOD(NPointingDevice::New)
-{
-  if (info.IsConstructCall()) {
-    Nan::Utf8String str(info[0]->ToString());
-    std::string uri(*str);
-    NPointingDevice* obj = new NPointingDevice(uri);
-    obj->Wrap(info.This());
-    info.GetReturnValue().Set(info.This());
-  } 
-  else 
-  {
-    Local<Value> argv[1] = { info[0] };
-    Local<v8::Function> cons = Nan::New(constructor);
-    info.GetReturnValue().Set(Nan::NewInstance(cons, 1, argv).ToLocalChecked());
+NPointingDevice::NPointingDevice(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NPointingDevice>(info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
+
+  int length = info.Length();
+
+  if (length <= 0 || !info[0].IsString()) {
+    Napi::TypeError::New(env, "String expected").ThrowAsJavaScriptException();
+    return;
   }
+  std::string uri = info[0].ToString().Utf8Value();
+  this->input = PointingDevice::create(uri);
 }
 
-NAN_METHOD(NPointingDevice::setPointingCallback)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  if (info[0]->IsUndefined())
-  {
-    self->callback.Reset();
-    self->input->setPointingCallback(NULL, NULL);
-    if (self->refs_) // Reference count with self->Ref()
-      self->Unref();
-  }
-  else
-  {
-    self->callback.SetFunction(info[0].As<Function>());
-    if (!self->refs_)
-      self->Ref();
-    self->input->setPointingCallback(pointingCallback, self);
-  }
-  info.GetReturnValue().Set(info.Holder());
+Napi::Object NPointingDevice::NewInstance(Napi::Env env, Napi::Value uri){
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({uri});
+  return scope.Escape(napi_value(obj)).ToObject();
 }
 
-NAN_GETTER(NPointingDevice::getVendorID)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->getVendorID()));
+void NPointingDevice::setPointingCallback(const Napi::CallbackInfo& info){
+  this->tsfn = Napi::ThreadSafeFunction::New(
+    info.Env(),
+    info[0].As<Napi::Function>(),
+    "NPointingDevice::pointingCallback",
+    0, //Unlimited queue
+    1  //1 initial thread
+  );
+  this->Ref(); //prenvents destructor from being called.
+  this->input->setPointingCallback(pointingCallback, this);
 }
 
-NAN_GETTER(NPointingDevice::getProductID)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->getProductID()));
+Napi::Value NPointingDevice::getVendorID(const Napi::CallbackInfo& info) {
+  return Napi::Number::New(info.Env(), this->input->getVendorID());
 }
 
-NAN_GETTER(NPointingDevice::getVendor)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->getVendor()).ToLocalChecked());
+Napi::Value NPointingDevice::getProductID(const Napi::CallbackInfo& info){
+  return Napi::Number::New(info.Env(), this->input->getProductID());
 }
 
-NAN_GETTER(NPointingDevice::getProduct)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->getProduct()).ToLocalChecked());
+Napi::Value NPointingDevice::getVendor(const Napi::CallbackInfo& info){
+  return Napi::String::New(info.Env(), this->input->getVendor());
 }
 
-NAN_GETTER(NPointingDevice::getUpdateFrequency)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->getUpdateFrequency()));
+Napi::Value NPointingDevice::getProduct(const Napi::CallbackInfo& info){
+  return Napi::String::New(info.Env(), this->input->getProduct());
 }
 
-NAN_GETTER(NPointingDevice::getResolution)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->getResolution()));
+Napi::Value NPointingDevice::getUpdateFrequency(const Napi::CallbackInfo& info){
+  return Napi::Number::New(info.Env(), this->input->getUpdateFrequency());
 }
 
-NAN_GETTER(NPointingDevice::getURI)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  URI result = self->input->getURI();
-
-  info.GetReturnValue().Set(Nan::New(result.asString()).ToLocalChecked());
+Napi::Value NPointingDevice::getResolution(const Napi::CallbackInfo& info){
+  return Napi::Number::New(info.Env(), this->input->getResolution());
 }
 
-NAN_GETTER(NPointingDevice::getExpandedURI)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  URI result = self->input->getURI(true);
-
-  info.GetReturnValue().Set(Nan::New(result.asString()).ToLocalChecked());
+Napi::Value NPointingDevice::getURI(const Napi::CallbackInfo& info) {
+  return Napi::String::New(info.Env(), this->input->getURI().asString());
 }
 
-NAN_GETTER(NPointingDevice::isActive)
-{
-  NPointingDevice* self = ObjectWrap::Unwrap<NPointingDevice>(info.Holder());
-
-  info.GetReturnValue().Set(Nan::New(self->input->isActive()));
+Napi::Value NPointingDevice::getExpandedURI(const Napi::CallbackInfo& info){
+  return Napi::String::New(info.Env(), this->input->getURI(true).asString());
+}
+Napi::Value NPointingDevice::isActive(const Napi::CallbackInfo& info){
+  return Napi::Number::New(info.Env(), this->input->isActive());
 }

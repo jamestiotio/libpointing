@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/ntransferfunction.cc
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -15,193 +15,165 @@
 
 #include "ntransferfunction.h"
 
-using namespace v8;
 using namespace pointing;
 
-Nan::Persistent<Function> NTransferFunction::constructor;
-
-NTransferFunction::NTransferFunction(std::string uri,
-  NPointingDevice *ninput, NDisplayDevice *noutput)
-  :func(0)
-{
-  func = new SubPixelFunction("subpixel:?isOn=false", uri, ninput->input, noutput->output);
-}
+Napi::FunctionReference NTransferFunction::constructor;
 
 NTransferFunction::~NTransferFunction()
 {
-  nInput.Reset();
-  nOutput.Reset();
-  //std::cerr << "~NTransferFunction" << std::endl;
+  nInput->Reset();
+  nOutput->Reset();
   delete func;
 }
 
-NAN_MODULE_INIT(NTransferFunction::Init)
-{
-  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("TransferFunction").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
+Napi::Object NTransferFunction::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
 
-  Local<ObjectTemplate> itpl = tpl->InstanceTemplate();
-  Nan::SetAccessor(itpl, Nan::New("uri").ToLocalChecked(), getURI);
-  Nan::SetAccessor(itpl, Nan::New("subPixeling").ToLocalChecked(), getSubPixeling);
-  Nan::SetAccessor(itpl, Nan::New("humanResolution").ToLocalChecked(), getHumanResolution);
-  Nan::SetAccessor(itpl, Nan::New("cardinality").ToLocalChecked(), getCardinality);
-  Nan::SetAccessor(itpl, Nan::New("widgetSize").ToLocalChecked(), getWidgetSize);
-  
-  Nan::SetPrototypeMethod(tpl, "applyi", applyi);
-  Nan::SetPrototypeMethod(tpl, "applyd", applyd);
-  Nan::SetPrototypeMethod(tpl, "clearState", clearState);
-  Nan::SetPrototypeMethod(tpl, "setSubPixeling", setSubPixeling);
-  Nan::SetPrototypeMethod(tpl, "setHumanResolution", setHumanResolution);
-  Nan::SetPrototypeMethod(tpl, "setCardinalitySize", setCardinalitySize);
+  Napi::Function func = DefineClass(env, "TransferFunction", {
+    InstanceMethod("applyi", &NTransferFunction::applyi),
+    InstanceMethod("applyd", &NTransferFunction::applyd),
+    InstanceMethod("clearState", &NTransferFunction::clearState),
+    InstanceMethod("setSubPixeling", &NTransferFunction::setSubPixeling),
+    InstanceMethod("setHumanResolution", &NTransferFunction::setHumanResolution),
+    InstanceMethod("setCardinalitySize", &NTransferFunction::setCardinalitySize),
+    InstanceAccessor("uri", &NTransferFunction::getURI, NULL),
+    InstanceAccessor("subPixeling", &NTransferFunction::getSubPixeling, NULL),
+    InstanceAccessor("humanResolution", &NTransferFunction::getHumanResolution, NULL),
+    InstanceAccessor("cardinality", &NTransferFunction::getCardinality, NULL),
+    InstanceAccessor("widgetSize", &NTransferFunction::getWidgetSize, NULL),
+     //NULL = no setter on a read-only property.
+  });
 
-  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-  Nan::Set(target, Nan::New("TransferFunction").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
+
+  exports.Set("TransferFunction", func);
+
+  return exports;
 }
 
-NAN_METHOD(NTransferFunction::New)
-{
-  if (info.IsConstructCall()) {
-    // Invoked as constructor: `new MyObject(...)
-    Nan::Utf8String str(info[0]->ToString());
-    std::string uri(*str);
-    NPointingDevice *ninput = ObjectWrap::Unwrap<NPointingDevice>(info[1]->ToObject());
-    NDisplayDevice *noutput = ObjectWrap::Unwrap<NDisplayDevice>(info[2]->ToObject());
-    NTransferFunction* obj = new NTransferFunction(uri, ninput, noutput);
-    
-    obj->nInput.Reset(info[1]);
-    obj->nOutput.Reset(info[2]);
-    obj->Wrap(info.This());
+NTransferFunction::NTransferFunction(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NTransferFunction>(info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
 
-    info.GetReturnValue().Set(info.This());
-  } else {
-    // Invoked as plain function `MyObject(...)`, turn into construct call.
-    const int argc = 3;
-    Local<Value> argv[argc] = { info[0], info[1], info[2] };
-    Local<Function> cons = Nan::New<Function>(constructor);
-    info.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
+  int length = info.Length();
+
+  if ( length <= 0 || length > 3 || !info[0].IsString()) {
+    Napi::TypeError::New(env, "String, PointingDevice, DisplayDevice expected").ThrowAsJavaScriptException();
+    return;
   }
+
+  std::string uri = info[0].ToString().Utf8Value();
+  NPointingDevice *ninput = Napi::ObjectWrap<NPointingDevice>::Unwrap(info[1].As<Napi::Object>());
+  NDisplayDevice *noutput = Napi::ObjectWrap<NDisplayDevice>::Unwrap(info[2].As<Napi::Object>());
+
+  this->func = new SubPixelFunction("subpixel:?isOn=false", uri, ninput->input, noutput->output);
+  this->nInput = ninput;
+  this->nOutput = noutput;
+
+  // NAN CODE:
+  //   func = new SubPixelFunction("subpixel:?isOn=false", uri, ninput->input, noutput->output);
+  //
+  // obj->nInput.Reset(info[1]);
+  // obj->nOutput.Reset(info[2]);
+  // obj->Wrap(info.This());
 }
 
-NAN_METHOD(NTransferFunction::applyi)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
+Napi::Object NTransferFunction::NewInstance(Napi::Env env, Napi::Value uri, Napi::Value input, Napi::Value output){
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({uri, input, output});
+  return scope.Escape(napi_value(obj)).ToObject();
+}
+
+
+Napi::Value NTransferFunction::applyi(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
+
+  int length = info.Length();
+  Napi::Object obj = Napi::Object::New(env);
+  if ( length <= 0 || length > 3 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber()) {
+    Napi::TypeError::New(env, "3 Numbers expected").ThrowAsJavaScriptException();
+    return obj;
+  }
 
   int dxPixel = 0, dyPixel = 0;
-  int dx = info[0].As<Number>()->IntegerValue();
-  int dy = info[1].As<Number>()->IntegerValue();
-  TimeStamp::inttime timestamp = info[2].As<Number>()->IntegerValue();
-  obj->func->applyi(dx, dy, &dxPixel, &dyPixel, timestamp);
+  int dx = info[0].As<Napi::Number>().Int32Value();
+  int dy = info[1].As<Napi::Number>().Int32Value();
+  TimeStamp::inttime timestamp = info[2].As<Napi::Number>().Uint32Value();
+  this->func->applyi(dx, dy, &dxPixel, &dyPixel, timestamp);
 
-  Local<Object> result = Nan::New<Object>();
-  
-  result->Set(Nan::New("dx").ToLocalChecked(), Nan::New<Number>(dxPixel));
-  result->Set(Nan::New("dy").ToLocalChecked(), Nan::New<Number>(dyPixel));
+  obj.Set("dx", dxPixel);
+  obj.Set("dy", dyPixel);
 
-  info.GetReturnValue().Set(result);
+  return obj;
 }
 
-NAN_METHOD(NTransferFunction::applyd)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
+Napi::Value NTransferFunction::applyd(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
+
+  int length = info.Length();
+  Napi::Object obj = Napi::Object::New(env);
+  if ( length <= 0 || length > 3 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber()) {
+    Napi::TypeError::New(env, "3 Numbers expected").ThrowAsJavaScriptException();
+    return obj;
+  }
 
   double dxPixel = 0, dyPixel = 0;
-  int dx = info[0].As<Number>()->IntegerValue();
-  int dy = info[1].As<Number>()->IntegerValue();
-  TimeStamp::inttime timestamp = info[2].As<Number>()->IntegerValue();
-  obj->func->applyd(dx, dy, &dxPixel, &dyPixel, timestamp);
+  int dx = info[0].As<Napi::Number>().Int32Value();
+  int dy = info[1].As<Napi::Number>().Int32Value();
+  TimeStamp::inttime timestamp = info[2].As<Napi::Number>().Uint32Value();
+  this->func->applyd(dx, dy, &dxPixel, &dyPixel, timestamp);
 
-  Local<Object> result = Nan::New<Object>();
-  
-  result->Set(Nan::New("dx").ToLocalChecked(), Nan::New<Number>(dxPixel));
-  result->Set(Nan::New("dy").ToLocalChecked(), Nan::New<Number>(dyPixel));
+  obj.Set("dx", dxPixel);
+  obj.Set("dy", dyPixel);
 
-  info.GetReturnValue().Set(result);
+  return obj;
 }
 
-NAN_METHOD(NTransferFunction::clearState)
+void NTransferFunction::clearState(const Napi::CallbackInfo& info)
 {
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  obj->func->clearState();
-
-  info.GetReturnValue().Set(info.Holder());
+  this->func->clearState();
 }
 
-NAN_METHOD(NTransferFunction::setSubPixeling)
+void NTransferFunction::setSubPixeling(const Napi::CallbackInfo& info)
 {
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  bool subpixeling = info[0].As<Number>()->BooleanValue();
-  obj->func->setSubPixeling(subpixeling);
-
-  info.GetReturnValue().Set(info.Holder());
+  bool subpixeling = info[0].As<Napi::Boolean>().Value();
+  this->func->setSubPixeling(subpixeling);
 }
 
-NAN_METHOD(NTransferFunction::setHumanResolution)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  int humanResolution = info[0].As<Number>()->IntegerValue();
-  obj->func->setHumanResolution(humanResolution);
-  
-  info.GetReturnValue().Set(info.Holder());
+void NTransferFunction::setHumanResolution(const Napi::CallbackInfo& info){
+  int humanResolution = info[0].As<Napi::Number>().Uint32Value();
+  this->func->setHumanResolution(humanResolution);
 }
 
-NAN_METHOD(NTransferFunction::setCardinalitySize)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  int cardinality = info[0].As<Number>()->IntegerValue();
-  int size = info[1].As<Number>()->IntegerValue();
-  obj->func->setCardinalitySize(cardinality, size);
-  
-  info.GetReturnValue().Set(info.Holder());
+void NTransferFunction::setCardinalitySize(const Napi::CallbackInfo& info){
+  int cardinality = info[0].As<Napi::Number>().Uint32Value();
+  int size = info[1].As<Napi::Number>().Uint32Value();
+  this->func->setCardinalitySize(cardinality, size);
 }
 
-NAN_GETTER(NTransferFunction::getURI)
-{
-  NTransferFunction* self = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  URI result = self->func->getInnerURI();
-
-  info.GetReturnValue().Set(Nan::New(result.asString()).ToLocalChecked());
+Napi::Value NTransferFunction::getURI(const Napi::CallbackInfo& info){
+  return Napi::String::New(info.Env(), this->func->getInnerURI().asString());
 }
 
-NAN_GETTER(NTransferFunction::getSubPixeling)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  bool subpixeling = obj->func->getSubPixeling();
-
-  info.GetReturnValue().Set(Nan::New<Boolean>(subpixeling));
+Napi::Value NTransferFunction::getSubPixeling(const Napi::CallbackInfo& info){
+  return Napi::Boolean::New(info.Env(), this->func->getSubPixeling());
 }
 
-NAN_GETTER(NTransferFunction::getHumanResolution)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
-  int subpixeling = obj->func->getHumanResolution();
-
-  info.GetReturnValue().Set(Nan::New(subpixeling));
+Napi::Value NTransferFunction::getHumanResolution(const Napi::CallbackInfo& info){
+  return Napi::Number::New(info.Env(), this->func->getHumanResolution());
 }
 
-NAN_GETTER(NTransferFunction::getCardinality)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
+Napi::Value NTransferFunction::getCardinality(const Napi::CallbackInfo& info){
   int cardinality = 0, size = 0;
-  obj->func->getCardinalitySize(&cardinality, &size);
-
-  info.GetReturnValue().Set(Nan::New(cardinality));
+  this->func->getCardinalitySize(&cardinality, &size);
+  return Napi::Number::New(info.Env(), cardinality);
 }
 
-NAN_GETTER(NTransferFunction::getWidgetSize)
-{
-  NTransferFunction* obj = ObjectWrap::Unwrap<NTransferFunction>(info.Holder());
-
+Napi::Value NTransferFunction::getWidgetSize(const Napi::CallbackInfo& info){
   int cardinality = 0, size = 0;
-  obj->func->getCardinalitySize(&cardinality, &size);
-
-  info.GetReturnValue().Set(Nan::New(size));
+  this->func->getCardinalitySize(&cardinality, &size);
+  return Napi::Number::New(info.Env(), size);
 }
