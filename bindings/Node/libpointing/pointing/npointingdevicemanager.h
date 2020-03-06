@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/npointingdevicemanager.h
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -16,24 +16,23 @@
 #ifndef NPOINTINGDEVICEMANAGER_H
 #define NPOINTINGDEVICEMANAGER_H
 
-#include <nan.h>
+#include <napi.h>
 #include <map>
 #include <pointing/input/PointingDeviceManager.h>
 
-class NPointingDeviceManager : public Nan::ObjectWrap
+class NPointingDeviceManager : public Napi::ObjectWrap<NPointingDeviceManager>
 {
   public:
-    static NAN_MODULE_INIT(Init);
+    static Napi::Object Init(Napi::Env env, Napi::Object exports);
+    NPointingDeviceManager(const Napi::CallbackInfo& info);
+    static Napi::Object NewInstance(Napi::Env env);
 
   private:
-  	static NAN_METHOD(New);
+    static Napi::FunctionReference constructor;
 
-  	static NAN_METHOD(addDeviceUpdateCallback);
-    static NAN_METHOD(removeDeviceUpdateCallback);
-
-    static NAN_GETTER(getDeviceList);
-
-  	static Nan::Persistent<v8::Function> constructor;
+    void addDeviceUpdateCallback(const Napi::CallbackInfo& info);
+    void removeDeviceUpdateCallback(const Napi::CallbackInfo& info);
+    Napi::Value getDeviceList(const Napi::CallbackInfo& info);
 
   	static void deviceUpdateCallback(void *context, const pointing::PointingDeviceDescriptor &descriptor, bool wasAdded);
 };

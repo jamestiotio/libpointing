@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/ndisplaydevicemanager.cc
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -14,16 +14,8 @@
  */
 
 #include "ndisplaydevicemanager.h"
-#include <iostream>
-#include <uv.h>
-#ifndef __APPLE__
-#include <queue>
-#endif
 
-using namespace v8;
 using namespace pointing;
-
-#ifndef __APPLE__
 
 struct DisplayDescriptorCallback
 {
@@ -31,137 +23,98 @@ struct DisplayDescriptorCallback
   bool wasAdded;
 };
 
-static uv_async_t async_;
-static uv_mutex_t pqueue_mutex;
-static std::queue<DisplayDescriptorCallback *> pqueue_;
-
-#endif
-
-Nan::Persistent<Function> NDisplayDeviceManager::constructor;
-typedef std::map<std::string, Nan::Callback *> callbackMap_t;
+Napi::FunctionReference NDisplayDeviceManager::constructor;
+typedef std::map<std::string, Napi::ThreadSafeFunction> callbackMap_t;
 static callbackMap_t callbackMap = callbackMap_t();
 
-void createDescObject(Local<Object> &descObj, const DisplayDeviceDescriptor &ddd)
+void createDescObject(Napi::Object &obj, const DisplayDeviceDescriptor &ddd)
 {
-  Nan::Set(descObj, Nan::New("devURI").ToLocalChecked(), Nan::New(ddd.devURI).ToLocalChecked());
-  Nan::Set(descObj, Nan::New("name").ToLocalChecked(), Nan::New(ddd.name).ToLocalChecked());
-}
-
-void callAllCallbacks(const DisplayDeviceDescriptor &descriptor, bool wasAdded)
-{
-  Nan::HandleScope scope;
-  
-  callbackMap_t::iterator it = callbackMap.begin();
-  for(; it != callbackMap.end(); it++)
-  {
-    Local<Object> descObj = Nan::New<Object>();
-    createDescObject(descObj, descriptor);
-    Local<Value> argv[] = {
-      descObj, Nan::New<Number>(wasAdded)
-    };
-    Nan::AsyncResource resource("libpointing:npdisplaydevicemanager::callAllCallbacks");
-    it->second->Call(2, argv, &resource);
-  }
+  obj.Set("devURI", ddd.devURI);
+  obj.Set("name", ddd.name);
 }
 
 void NDisplayDeviceManager::deviceUpdateCallback(void *context, const DisplayDeviceDescriptor &descriptor, bool wasAdded)
 {
-#ifdef __APPLE__
-  callAllCallbacks(descriptor, wasAdded);
-#else
   DisplayDescriptorCallback *ddc = new DisplayDescriptorCallback;
   ddc->desc = descriptor;
   ddc->wasAdded = wasAdded;
-  uv_mutex_lock(&pqueue_mutex);
-  pqueue_.push(ddc);
-  uv_mutex_unlock(&pqueue_mutex);
-  uv_async_send(&async_);
-#endif
-}
 
-#ifndef __APPLE__
-
-static void asyncHandler(uv_async_t *handle)
-{
-  uv_mutex_lock(&pqueue_mutex);
-  
-  while (!pqueue_.empty())
+  callbackMap_t::iterator it = callbackMap.begin();
+  for(; it != callbackMap.end(); it++)
   {
-    DisplayDescriptorCallback *ddc = pqueue_.front();
-    pqueue_.pop();
-    callAllCallbacks(ddc->desc, ddc->wasAdded);
-    delete ddc;
-  }
+    auto callback = []( Napi::Env env, Napi::Function jsCallback, DisplayDescriptorCallback* ddc) {
+      Napi::Object descObj = Napi::Object::New(env);
+      createDescObject(descObj, ddc->desc);
+      Napi::Number added = Napi::Number::New(env, ddc->wasAdded);
+      jsCallback.Call({descObj, added});
+    };
 
-  uv_mutex_unlock(&pqueue_mutex);
+    it->second.BlockingCall(ddc, callback);
+  }
 }
 
-#endif
-
-NAN_MODULE_INIT(NDisplayDeviceManager::Init)
-{
+Napi::Object NDisplayDeviceManager::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
   DisplayDeviceManager::get()->addDeviceUpdateCallback(deviceUpdateCallback, NULL);
 
-  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("DisplayDeviceManager").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  Napi::Function func = DefineClass(env, "DisplayDeviceManager", {
+    InstanceMethod("addDeviceUpdateCallback", &NDisplayDeviceManager::addDeviceUpdateCallback),
+    InstanceMethod("removeDeviceUpdateCallback", &NDisplayDeviceManager::removeDeviceUpdateCallback),
+    InstanceAccessor("deviceList", &NDisplayDeviceManager::getDeviceList, NULL) //NULL = no setter on the deviceList property.
+  });
 
-  Nan::SetPrototypeMethod(tpl, "addDeviceUpdateCallback", addDeviceUpdateCallback);
-  Nan::SetPrototypeMethod(tpl, "removeDeviceUpdateCallback", removeDeviceUpdateCallback);
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
 
-  Local<ObjectTemplate> itpl = tpl->InstanceTemplate();
-  Nan::SetAccessor(itpl, Nan::New("deviceList").ToLocalChecked(), getDeviceList);
+  exports.Set("DisplayDeviceManager", func);
 
-  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-  Nan::Set(target, Nan::New("DisplayDeviceManager").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
-
-#ifndef __APPLE__
-  uv_mutex_init(&pqueue_mutex);
-  uv_loop_t *loop = uv_default_loop();
-  uv_async_init(loop, &async_, (uv_async_cb)asyncHandler);
-#endif
+  return exports;
 }
 
-NAN_METHOD(NDisplayDeviceManager::New)
-{
-  if (info.IsConstructCall()) {
-    // Invoked as constructor: `new MyObject(...)`
-    info.GetReturnValue().Set(info.This());
-  } else {
-    // Invoked as plain function `MyObject(...)`, turn into construct call.
-    Local<Function> cons = Nan::New<Function>(constructor);
-    info.GetReturnValue().Set(Nan::NewInstance(cons).ToLocalChecked());
-  }
+NDisplayDeviceManager::NDisplayDeviceManager(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NDisplayDeviceManager>(info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
+};
+
+Napi::Object NDisplayDeviceManager::NewInstance(Napi::Env env) {
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({});
+  return scope.Escape(napi_value(obj)).ToObject();
 }
 
-NAN_METHOD(NDisplayDeviceManager::addDeviceUpdateCallback)
-{
-  callbackMap[*Nan::Utf8String(info[0].As<String>())] = new Nan::Callback(info[0].As<Function>());
+void NDisplayDeviceManager::addDeviceUpdateCallback(const Napi::CallbackInfo& info) {
+  std::string key = info[0].ToString().Utf8Value();
 
-  info.GetReturnValue().Set(info.This());
+  callbackMap[key] = Napi::ThreadSafeFunction::New(
+    info.Env(),
+    info[0].As<Napi::Function>(),
+    "NDisplayDeviceManager::addDeviceUpdateCallback",
+    0, //Unlimited queue
+    1  //1 initial thread
+  );
 }
 
+void NDisplayDeviceManager::removeDeviceUpdateCallback(const Napi::CallbackInfo& info) {
+  std::string key = info[0].ToString().Utf8Value();
 
-NAN_METHOD(NDisplayDeviceManager::removeDeviceUpdateCallback)
-{
-  callbackMap.erase(*Nan::Utf8String(info[0].As<String>()));
-  
-  info.GetReturnValue().Set(info.This());
+  callbackMap.erase(key);
 }
 
-NAN_GETTER(NDisplayDeviceManager::getDeviceList)
+Napi::Value NDisplayDeviceManager::getDeviceList(const Napi::CallbackInfo& info)
 {
+  Napi::Env env = info.Env();
+
   DisplayDeviceManager *man = DisplayDeviceManager::get();
   // Creating javascript array
-  Local<Array> result = Nan::New<Array>(man->size());
+  Napi::Array result = Napi::Array::New(env, man->size());
 
   int i = 0;
   for (DisplayDescriptorIterator it = man->begin(); it != man->end(); it++)
   {
     DisplayDeviceDescriptor pdd = *it;
-    Local<Object> descObj = Nan::New<Object>();
+    Napi::Object descObj = Napi::Object::New(env);
     createDescObject(descObj, pdd);
-    Nan::Set(result, i++, descObj);
+    result[i++] = descObj;
   }
-  info.GetReturnValue().Set(result);
+  return result;
 }

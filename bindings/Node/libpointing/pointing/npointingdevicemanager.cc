@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/npointingdevicemanager.cc
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -12,18 +12,10 @@
  * the GNU General Public License version 2 or any later version.
  *
  */
- 
+
 #include "npointingdevicemanager.h"
-#include <iostream>
-#include <uv.h>
-#ifndef __APPLE__
-#include <queue>
-#endif
 
-using namespace v8;
 using namespace pointing;
-
-#ifndef __APPLE__
 
 struct PointingDescriptorCallback
 {
@@ -31,139 +23,100 @@ struct PointingDescriptorCallback
   bool wasAdded;
 };
 
-static uv_async_t async_;
-static uv_mutex_t pqueue_mutex;
-static std::queue<PointingDescriptorCallback *> pqueue_;
-
-#endif
-
-Nan::Persistent<Function> NPointingDeviceManager::constructor;
-typedef std::map<std::string, Nan::Callback *> callbackMap_t;
+Napi::FunctionReference NPointingDeviceManager::constructor;
+typedef std::map<std::string, Napi::ThreadSafeFunction> callbackMap_t;
 static callbackMap_t callbackMap = callbackMap_t();
 
-void createDescObject(Local<Object> &descObj, const PointingDeviceDescriptor &pdd)
+void createDescObject(Napi::Object &obj, const PointingDeviceDescriptor &pdd)
 {
-  Nan::Set(descObj, Nan::New("devURI").ToLocalChecked(), Nan::New(pdd.devURI.asString()).ToLocalChecked());
-  Nan::Set(descObj, Nan::New("vendor").ToLocalChecked(), Nan::New(pdd.vendor).ToLocalChecked());
-  Nan::Set(descObj, Nan::New("product").ToLocalChecked(), Nan::New(pdd.product).ToLocalChecked());
-  Nan::Set(descObj, Nan::New("vendorID").ToLocalChecked(), Nan::New(pdd.vendorID));
-  Nan::Set(descObj, Nan::New("productID").ToLocalChecked(), Nan::New(pdd.productID));
-}
-
-void callAllCallbacks(const PointingDeviceDescriptor &descriptor, bool wasAdded)
-{
-  Nan::HandleScope scope;
-  
-  callbackMap_t::iterator it = callbackMap.begin();
-  for(; it != callbackMap.end(); it++)
-  {
-    Local<Object> descObj = Nan::New<Object>();
-    createDescObject(descObj, descriptor);
-    Local<Value> argv[] = {
-      descObj, Nan::New<Number>(wasAdded)
-    };
-    Nan::AsyncResource resource("libpointing:npointingdevicemanager::callAllCallbacks");
-    it->second->Call(2, argv, &resource);
-  }
+  obj.Set("devURI", pdd.devURI.asString());
+  obj.Set("vendor", pdd.vendor);
+  obj.Set("product", pdd.product);
+  obj.Set("vendorID", pdd.vendorID);
+  obj.Set("productID", pdd.productID);
 }
 
 void NPointingDeviceManager::deviceUpdateCallback(void *context, const PointingDeviceDescriptor &descriptor, bool wasAdded)
 {
-#ifdef __APPLE__
-  callAllCallbacks(descriptor, wasAdded);
-#else
   PointingDescriptorCallback *pdc = new PointingDescriptorCallback;
   pdc->desc = descriptor;
   pdc->wasAdded = wasAdded;
-  uv_mutex_lock(&pqueue_mutex);
-  pqueue_.push(pdc);
-  uv_mutex_unlock(&pqueue_mutex);
-  uv_async_send(&async_);
-#endif
-}
 
-#ifndef __APPLE__
-
-static void asyncHandler(uv_async_t *handle)
-{
-  uv_mutex_lock(&pqueue_mutex);
-  
-  while (!pqueue_.empty())
+  callbackMap_t::iterator it = callbackMap.begin();
+  for(; it != callbackMap.end(); it++)
   {
-    PointingDescriptorCallback *pdc = pqueue_.front();
-    pqueue_.pop();
-    callAllCallbacks(pdc->desc, pdc->wasAdded);
-    delete pdc;
-  }
+    auto callback = []( Napi::Env env, Napi::Function jsCallback, PointingDescriptorCallback* pdc) {
+      Napi::Object descObj = Napi::Object::New(env);
+      createDescObject(descObj, pdc->desc);
+      Napi::Number added = Napi::Number::New(env, pdc->wasAdded);
+      jsCallback.Call({descObj, added});
+    };
 
-  uv_mutex_unlock(&pqueue_mutex);
+    it->second.BlockingCall(pdc, callback);
+  }
 }
 
-#endif
-
-NAN_MODULE_INIT(NPointingDeviceManager::Init)
-{
+Napi::Object NPointingDeviceManager::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
   PointingDeviceManager::get()->addDeviceUpdateCallback(deviceUpdateCallback, NULL);
 
-  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("PointingDeviceManager").ToLocalChecked());
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  Napi::Function func = DefineClass(env, "PointingDeviceManager", {
+    InstanceMethod("addDeviceUpdateCallback", &NPointingDeviceManager::addDeviceUpdateCallback),
+    InstanceMethod("removeDeviceUpdateCallback", &NPointingDeviceManager::removeDeviceUpdateCallback),
+    InstanceAccessor("deviceList", &NPointingDeviceManager::getDeviceList, NULL) //NULL = no setter on the deviceList property.
+  });
 
-  Nan::SetPrototypeMethod(tpl, "addDeviceUpdateCallback", addDeviceUpdateCallback);
-  Nan::SetPrototypeMethod(tpl, "removeDeviceUpdateCallback", removeDeviceUpdateCallback);
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
 
-  Local<ObjectTemplate> itpl = tpl->InstanceTemplate();
-  Nan::SetAccessor(itpl, Nan::New("deviceList").ToLocalChecked(), getDeviceList);
+  exports.Set("PointingDeviceManager", func);
 
-  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-  Nan::Set(target, Nan::New("PointingDeviceManager").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
-
-#ifndef __APPLE__
-  uv_mutex_init(&pqueue_mutex);
-  uv_loop_t *loop = uv_default_loop();
-  uv_async_init(loop, &async_, (uv_async_cb)asyncHandler);
-#endif
+  return exports;
 }
 
-NAN_METHOD(NPointingDeviceManager::New)
+NPointingDeviceManager::NPointingDeviceManager(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NPointingDeviceManager>(info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
+};
+
+Napi::Object NPointingDeviceManager::NewInstance(Napi::Env env) {
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({});
+  return scope.Escape(napi_value(obj)).ToObject();
+}
+
+void NPointingDeviceManager::addDeviceUpdateCallback(const Napi::CallbackInfo& info) {
+  std::string key = info[0].ToString().Utf8Value();
+
+  callbackMap[key] = Napi::ThreadSafeFunction::New(
+    info.Env(),
+    info[0].As<Napi::Function>(),
+    "NDisplayDeviceManager::addDeviceUpdateCallback",
+    0, //Unlimited queue
+    1  //1 initial thread
+  );
+}
+
+void NPointingDeviceManager::removeDeviceUpdateCallback(const Napi::CallbackInfo& info) {
+  std::string key = info[0].ToString().Utf8Value();
+  callbackMap.erase(key);
+}
+
+Napi::Value NPointingDeviceManager::getDeviceList(const Napi::CallbackInfo& info)
 {
-  if (info.IsConstructCall()) {
-    // Invoked as constructor: `new MyObject(...)`
-    info.GetReturnValue().Set(info.This());
-  } else {
-    // Invoked as plain function `MyObject(...)`, turn into construct call.
-    Local<Function> cons = Nan::New<Function>(constructor);
-    info.GetReturnValue().Set(Nan::NewInstance(cons).ToLocalChecked());
-  }
-}
+  Napi::Env env = info.Env();
 
-NAN_METHOD(NPointingDeviceManager::addDeviceUpdateCallback)
-{
-  callbackMap[*Nan::Utf8String(info[0].As<String>())] = new Nan::Callback(info[0].As<Function>());
-
-  info.GetReturnValue().Set(info.This());
-}
-
-NAN_METHOD(NPointingDeviceManager::removeDeviceUpdateCallback) {
- 
-  callbackMap.erase(*Nan::Utf8String(info[0].As<String>()));
-  
-  info.GetReturnValue().Set(info.This());
-}
-
-NAN_GETTER(NPointingDeviceManager::getDeviceList)
-{
   PointingDeviceManager *man = PointingDeviceManager::get();
   // Creating javascript array
-  Local<Array> result = Nan::New<Array>(man->size());
+  Napi::Array result = Napi::Array::New(env, man->size());
 
   int i = 0;
   for (PointingDescriptorIterator it = man->begin(); it != man->end(); it++)
   {
     PointingDeviceDescriptor pdd = *it;
-    Local<Object> descObj = Nan::New<Object>();
+    Napi::Object descObj = Napi::Object::New(env);
     createDescObject(descObj, pdd);
-    Nan::Set(result, i++, descObj);
+    result[i++] = descObj;
   }
-  info.GetReturnValue().Set(result);
+  return result;
 }

@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/ndisplaydevice.cc
  *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -21,121 +21,107 @@ bool custom_isnan(double var)
     return d != d;
 }
 
-using namespace v8;
 using namespace pointing;
 
-Nan::Persistent<Function> NDisplayDevice::constructor;
-
-NDisplayDevice::NDisplayDevice(std::string uri) : output(0)
-{
-  output = DisplayDevice::create(uri);
-}
+Napi::FunctionReference NDisplayDevice::constructor;
 
 NDisplayDevice::~NDisplayDevice()
 {
+  // std::cerr << "~NDisplayDevice" << std::endl;
   delete output;
 }
 
-NAN_MODULE_INIT(NDisplayDevice::Init)
-{
-  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("DisplayDevice").ToLocalChecked());
+Napi::Object NDisplayDevice::Init(Napi::Env env, Napi::Object exports) {
+  Napi::HandleScope scope(env);
 
-  tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  Napi::Function func = DefineClass(env, "DisplayDevice", {
+    InstanceAccessor("size", &NDisplayDevice::getSize, NULL),
+    InstanceAccessor("bounds", &NDisplayDevice::getBounds, NULL),
+    InstanceAccessor("resolution", &NDisplayDevice::getResolution, NULL),
+    InstanceAccessor("refreshRate", &NDisplayDevice::getRefreshRate, NULL),
+    InstanceAccessor("uri", &NDisplayDevice::getURI, NULL),
+     //NULL = no setter on a read-only property.
+  });
 
-  Local<ObjectTemplate> itpl = tpl->InstanceTemplate();
-  Nan::SetAccessor(itpl, Nan::New("size").ToLocalChecked(), getSize);
-  Nan::SetAccessor(itpl, Nan::New("bounds").ToLocalChecked(), getBounds);
-  Nan::SetAccessor(itpl, Nan::New("resolution").ToLocalChecked(), getResolution);
-  Nan::SetAccessor(itpl, Nan::New("refreshRate").ToLocalChecked(), getRefreshRate);
-  Nan::SetAccessor(itpl, Nan::New("uri").ToLocalChecked(), getURI);
+  constructor = Napi::Persistent(func);
+  constructor.SuppressDestruct();
 
-  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-  Nan::Set(target, Nan::New("DisplayDevice").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
+  exports.Set("DisplayDevice", func);
+
+  return exports;
 }
 
-NAN_METHOD(NDisplayDevice::New)
-{
-  if (info.IsConstructCall())
-  {
-    Nan::Utf8String str(info[0]->ToString());
-    std::string uri(*str);
-    NDisplayDevice* obj = new NDisplayDevice(uri);
-    obj->Wrap(info.This());
-    info.GetReturnValue().Set(info.This());
-  } 
-  else 
-  {
-    Local<Value> argv[1] = { info[0] };
-    Local<v8::Function> cons = Nan::New(constructor);
-    info.GetReturnValue().Set(Nan::NewInstance(cons, 1, argv).ToLocalChecked());
+NDisplayDevice::NDisplayDevice(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NDisplayDevice>(info) {
+  Napi::Env env = info.Env();
+  Napi::HandleScope scope(env);
+
+  int length = info.Length();
+
+  if (length <= 0 || !info[0].IsString()) {
+    Napi::TypeError::New(env, "String expected").ThrowAsJavaScriptException();
+    return;
   }
+  std::string uri = info[0].ToString().Utf8Value();
+  this->output = DisplayDevice::create(uri);
 }
 
-NAN_GETTER(NDisplayDevice::getSize)
-{
-  NDisplayDevice* self = ObjectWrap::Unwrap<NDisplayDevice>(info.Holder());
-
-  DisplayDevice::Size size = self->output->getSize();
-  Local<Object> result = Nan::New<Object>();
-  Nan::Set(result, Nan::New("width").ToLocalChecked(), Nan::New(size.width));
-  Nan::Set(result, Nan::New("height").ToLocalChecked(), Nan::New(size.height));
-
-  info.GetReturnValue().Set(result);
+Napi::Object NDisplayDevice::NewInstance(Napi::Env env, Napi::Value uri){
+  Napi::EscapableHandleScope scope(env);
+  Napi::Object obj = constructor.New({uri});
+  return scope.Escape(napi_value(obj)).ToObject();
 }
 
-NAN_GETTER(NDisplayDevice::getBounds)
-{
-  NDisplayDevice* self = ObjectWrap::Unwrap<NDisplayDevice>(info.Holder());
+Napi::Value NDisplayDevice::getSize(const Napi::CallbackInfo& info){
+  Napi::Env env = info.Env();
 
-  DisplayDevice::Bounds bounds = self->output->getBounds();
-  Local<Object> result = Nan::New<Object>();
+  DisplayDevice::Size size = this->output->getSize();
+  Napi::Object sizeObj = Napi::Object::New(env);
+  sizeObj.Set("width", size.width);
+  sizeObj.Set("height", size.height);
 
-  Local<Object> size = Nan::New<Object>();
-  Nan::Set(size, Nan::New("width").ToLocalChecked(), Nan::New(bounds.size.width));
-  Nan::Set(size, Nan::New("height").ToLocalChecked(), Nan::New(bounds.size.height));
-  Nan::Set(result, Nan::New("size").ToLocalChecked(), size);
-
-  Local<Object> origin = Nan::New<Object>();
-  Nan::Set(origin, Nan::New("x").ToLocalChecked(), Nan::New(bounds.origin.x));
-  Nan::Set(origin, Nan::New("y").ToLocalChecked(), Nan::New(bounds.origin.y));
-  Nan::Set(result, Nan::New("origin").ToLocalChecked(), origin);
-
-  info.GetReturnValue().Set(result);
+  return sizeObj;
 }
 
-NAN_GETTER(NDisplayDevice::getResolution)
-{
-  NDisplayDevice* self = ObjectWrap::Unwrap<NDisplayDevice>(info.Holder());
+Napi::Value NDisplayDevice::getBounds(const Napi::CallbackInfo& info){
+  Napi::Env env = info.Env();
+
+  DisplayDevice::Bounds bounds = this->output->getBounds();
+  Napi::Object boundsObj = Napi::Object::New(env);
+
+  Napi::Object sizeObj = Napi::Object::New(env);
+  sizeObj.Set("width", bounds.size.width);
+  sizeObj.Set("height", bounds.size.height);
+  boundsObj.Set("size", sizeObj);
+
+  Napi::Object originObj = Napi::Object::New(env);
+  originObj.Set("x", bounds.origin.x);
+  originObj.Set("y", bounds.origin.y);
+  boundsObj.Set("origin", originObj);
+
+  return boundsObj;
+}
+
+Napi::Value NDisplayDevice::getResolution(const Napi::CallbackInfo& info){
+  Napi::Env env = info.Env();
 
   double hppi = 0, vppi = 0;
-  self->output->getResolution(&hppi, &vppi);
+  this->output->getResolution(&hppi, &vppi);
   if (custom_isnan(hppi) || custom_isnan(vppi))
   {
 	  hppi = 0;
 	  vppi = 0;
   }
-  Local<Object> result = Nan::New<Object>();
-  Nan::Set(result, Nan::New("hppi").ToLocalChecked(), Nan::New(hppi));
-  Nan::Set(result, Nan::New("vppi").ToLocalChecked(), Nan::New(vppi));
+  Napi::Object resObj = Napi::Object::New(env);
+  resObj.Set("hppi", hppi);
+  resObj.Set("vppi", vppi);
 
-  info.GetReturnValue().Set(result);
+  return resObj;
 }
 
-NAN_GETTER(NDisplayDevice::getRefreshRate)
-{
-  NDisplayDevice* self = ObjectWrap::Unwrap<NDisplayDevice>(info.Holder());
-
-  double rr = self->output->getRefreshRate();
-
-  info.GetReturnValue().Set(Nan::New(rr));
+Napi::Value NDisplayDevice::getRefreshRate(const Napi::CallbackInfo& info){
+  return Napi::Number::New(info.Env(), this->output->getRefreshRate());
 }
 
-NAN_GETTER(NDisplayDevice::getURI)
-{
-  NDisplayDevice* self = ObjectWrap::Unwrap<NDisplayDevice>(info.Holder());
-
-  URI result = self->output->getURI();
-
-  info.GetReturnValue().Set(Nan::New(result.asString()).ToLocalChecked());
+Napi::Value NDisplayDevice::getURI(const Napi::CallbackInfo& info){
+  return Napi::String::New(info.Env(), this->output->getURI().asString());
 }

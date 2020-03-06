@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/npointingcursor.h
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -12,41 +12,42 @@
  * the GNU General Public License version 2 or any later version.
  *
  */
- 
+
 #ifndef NPOINTINGCURSOR_H
 #define NPOINTINGCURSOR_H
 
-#include <nan.h>
+#include <napi.h>
 #include <pointing/utils/PointingCursor.h>
 
 namespace NPointingCursor
 {
-  NAN_METHOD(getPosition) {
-    v8::Local<v8::Object> result = Nan::New<v8::Object>();
+  Napi::Value getPosition(const Napi::CallbackInfo& info){
+    Napi::Env env = info.Env();
+    Napi::HandleScope scope(env);
+    Napi::Object pos = Napi::Object::New(env);
     double x, y;
     pointing::PointingCursor::getPosition(&x, &y);
-    result->Set(Nan::New("x").ToLocalChecked(), Nan::New(x));
-    result->Set(Nan::New("y").ToLocalChecked(), Nan::New(y));
-    info.GetReturnValue().Set(result);
+    pos.Set("x", Napi::Number::New(env, x));
+    pos.Set("y", Napi::Number::New(env, y));
+    return pos;
   }
 
-  NAN_METHOD(setPosition) {
-    double x = info[0]->NumberValue();
-    double y = info[1]->NumberValue();
+  void setPosition(const Napi::CallbackInfo& info){
+    double x = info[0].As<Napi::Number>().DoubleValue();
+    double y = info[1].As<Napi::Number>().DoubleValue();
     pointing::PointingCursor::setPosition(x, y);
   }
 
-  NAN_MODULE_INIT(Init)
-  {
-    v8::Local<v8::Object> result = Nan::New<v8::Object>();
-    v8::Local<v8::FunctionTemplate> getP = Nan::New<v8::FunctionTemplate>(getPosition);
-    v8::Local<v8::FunctionTemplate> setP = Nan::New<v8::FunctionTemplate>(setPosition);
+  Napi::Object Init(Napi::Env env, Napi::Object exports) {
+    Napi::HandleScope scope(env);
 
-    result->Set(Nan::New("getPosition").ToLocalChecked(), Nan::GetFunction(getP).ToLocalChecked());
-    result->Set(Nan::New("setPosition").ToLocalChecked(), Nan::GetFunction(setP).ToLocalChecked());
+    Napi::Object obj = Napi::Object::New(env);
 
-    target->Set(Nan::New("pointingCursor").ToLocalChecked(), result);
+    obj.Set("getPosition", Napi::Function::New(env, getPosition));
+    obj.Set("setPosition", Napi::Function::New(env, setPosition));
+
+    exports.Set("pointingCursor", obj);
+    return exports;
   }
 }
-
 #endif // NPOINTINGCURSOR_H

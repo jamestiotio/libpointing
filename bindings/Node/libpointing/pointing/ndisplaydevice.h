@@ -1,9 +1,9 @@
 /* -*- mode: c++ -*-
- * 
+ *
  * pointing/ndisplaydevice.h
- * 
+ *
  * Initial software
- * Authors: Izzatbek Mukhanov
+ * Authors: Izzatbek Mukhanov, Etienne Orieux
  * Copyright © Inria
  *
  * http://libpointing.org/
@@ -16,26 +16,24 @@
 #ifndef NDISPLAYDEVICE_H
 #define NDISPLAYDEVICE_H
 
-#include <nan.h>
+#include <napi.h>
 #include <pointing/pointing.h>
 
-class NDisplayDevice : public Nan::ObjectWrap
+class NDisplayDevice : public Napi::ObjectWrap<NDisplayDevice>
 {
   public:
-    static NAN_MODULE_INIT(Init);
+    static Napi::Object Init(Napi::Env env, Napi::Object exports);
+    NDisplayDevice(const Napi::CallbackInfo& info);
+    static Napi::Object NewInstance(Napi::Env env, Napi::Value uri);
+    ~NDisplayDevice();
 
   private:
-	  explicit NDisplayDevice(std::string uri);
-  	~NDisplayDevice();
-
-  	static NAN_METHOD(New);
-    static NAN_GETTER(getSize);
-    static NAN_GETTER(getBounds);
-    static NAN_GETTER(getResolution);
-    static NAN_GETTER(getRefreshRate);
-    static NAN_GETTER(getURI);
-
-  	static Nan::Persistent<v8::Function> constructor;
+    static Napi::FunctionReference constructor;
+    Napi::Value getSize(const Napi::CallbackInfo& info);
+    Napi::Value getBounds(const Napi::CallbackInfo& info);
+    Napi::Value getResolution(const Napi::CallbackInfo& info);
+    Napi::Value getRefreshRate(const Napi::CallbackInfo& info);
+    Napi::Value getURI(const Napi::CallbackInfo& info);
 
   	pointing::DisplayDevice *output;
 
