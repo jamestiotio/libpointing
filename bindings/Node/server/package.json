@@ -13,7 +13,7 @@
   "license": "GPL-2.0-or-later",
   "dependencies": {
     "express": "^4.13.3",
-    "libpointing": "~1.0.3",
+    "libpointing": ">=2.0.1",
     "socket.io": "^2.2.0"
   },
   "bin": {
