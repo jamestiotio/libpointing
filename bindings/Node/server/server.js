@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* 
+/*
  * Initial software
  * Authors: Izzatbek Mukhanov
  * Copyright © Inria
@@ -16,7 +16,7 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var pointing = require("libpointing");
-//var pointing = require("../libpointing/build/Release/pointing.node");
+// var pointing = require("../libpointing/build/Release/pointing.node");
 
 var manager = new pointing.PointingDeviceManager();
 var dManager = new pointing.DisplayDeviceManager();
@@ -75,18 +75,43 @@ io.on('connection', function(socket) {
   socket.on('pointingDeviceCreate', function(uri, id) {
     var input = new pointing.PointingDevice(uri ? uri : "any:");
     objects[id] = input;
+    var input = {
+      vendorID:input.vendorID,
+      productID:input.productID,
+      vendor:input.vendor,
+      product:input.product,
+      updateFrequency:input.updateFrequency,
+      resolution:input.resolution,
+      uri:input.uri,
+      expandedUri:input.expandedUri,
+      active:input.active,
+    }
     socket.emit('pointingObjectInfo', id, input);
   });
 
   socket.on('displayDeviceCreate', function(uri, id) {
     var output = new pointing.DisplayDevice(uri ? uri : "any:");
     objects[id] = output;
+    var output = {
+      size:output.size,
+      bounds: output.bounds,
+      resolution:output.resolution,
+      refreshRate:output.refreshRate,
+      uri:output.uri
+    }
     socket.emit('pointingObjectInfo', id, output);
   });
 
   socket.on('transferFunctionCreate', function(uri, id, inputId, outputId) {
     var tf = new pointing.TransferFunction(uri, objects[inputId], objects[outputId]);
     objects[id] = tf;
+    var tf = {
+     uri:tf.uri,
+     subPixeling:tf.subPixeling,
+     humanResolution:tf.humanResolution,
+     cardinality:tf.cardinality,
+     widgetSize:tf.widgetSize
+    }
     socket.emit('pointingObjectInfo', id, tf);
   });
 
@@ -141,7 +166,7 @@ io.on('connection', function(socket) {
       objects[id].setPointingCallback();
     delete objects[id];
   });
-  
+
   socket.on('systemPointerAcceleration', function(id, argsObj) {
     var acc = new pointing.SystemPointerAcceleration();
     if (argsObj)
@@ -175,8 +200,8 @@ io.on('connection', function(socket) {
 
 http.listen(port, function() {
   console.log(new Date().toString() + ': listening on *:' + port + '\n');
-}).on( 'error', function (e) { 
-  if (e.code == 'EADDRINUSE') { 
+}).on( 'error', function (e) {
+  if (e.code == 'EADDRINUSE') {
     console.log(new Date().toString() + ': port ' + port + ' is already being used');
     process.exit();
   }
