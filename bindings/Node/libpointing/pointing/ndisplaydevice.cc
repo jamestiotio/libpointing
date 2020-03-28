@@ -34,14 +34,7 @@ NDisplayDevice::~NDisplayDevice()
 Napi::Object NDisplayDevice::Init(Napi::Env env, Napi::Object exports) {
   Napi::HandleScope scope(env);
 
-  Napi::Function func = DefineClass(env, "DisplayDevice", {
-    InstanceAccessor("size", &NDisplayDevice::getSize, NULL),
-    InstanceAccessor("bounds", &NDisplayDevice::getBounds, NULL),
-    InstanceAccessor("resolution", &NDisplayDevice::getResolution, NULL),
-    InstanceAccessor("refreshRate", &NDisplayDevice::getRefreshRate, NULL),
-    InstanceAccessor("uri", &NDisplayDevice::getURI, NULL),
-     //NULL = no setter on a read-only property.
-  });
+  Napi::Function func = DefineClass(env, "DisplayDevice", {});
 
   constructor = Napi::Persistent(func);
   constructor.SuppressDestruct();
@@ -63,6 +56,12 @@ NDisplayDevice::NDisplayDevice(const Napi::CallbackInfo& info) : Napi::ObjectWra
   }
   std::string uri = info[0].ToString().Utf8Value();
   this->output = DisplayDevice::create(uri);
+
+  addProperty<NDisplayDevice>(info, "size", &NDisplayDevice::getSize);
+  addProperty<NDisplayDevice>(info, "bounds", &NDisplayDevice::getBounds);
+  addProperty<NDisplayDevice>(info, "resolution", &NDisplayDevice::getResolution);
+  addProperty<NDisplayDevice>(info, "refreshRate", &NDisplayDevice::getRefreshRate);
+  addProperty<NDisplayDevice>(info, "uri", &NDisplayDevice::getURI);
 }
 
 Napi::Object NDisplayDevice::NewInstance(Napi::Env env, Napi::Value uri){

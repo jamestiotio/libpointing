@@ -18,6 +18,7 @@
 
 #include <napi.h>
 #include <pointing/pointing.h>
+#include "property.hpp"
 
 class NPointingDevice : public Napi::ObjectWrap<NPointingDevice>
 {
