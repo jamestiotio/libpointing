@@ -49,17 +49,7 @@ Napi::Object NPointingDevice::Init(Napi::Env env, Napi::Object exports) {
   Napi::HandleScope scope(env);
 
   Napi::Function func = DefineClass(env, "PointingDevice", {
-    InstanceMethod("setPointingCallback", &NPointingDevice::setPointingCallback),
-    InstanceAccessor("vendorID", &NPointingDevice::getVendorID, NULL),
-    InstanceAccessor("productID", &NPointingDevice::getProductID, NULL),
-    InstanceAccessor("vendor", &NPointingDevice::getVendor, NULL),
-    InstanceAccessor("product", &NPointingDevice::getProduct, NULL),
-    InstanceAccessor("updateFrequency", &NPointingDevice::getUpdateFrequency, NULL),
-    InstanceAccessor("resolution", &NPointingDevice::getResolution, NULL),
-    InstanceAccessor("uri", &NPointingDevice::getURI, NULL),
-    InstanceAccessor("expandedUri", &NPointingDevice::getExpandedURI, NULL),
-    InstanceAccessor("active", &NPointingDevice::isActive, NULL)
-     //NULL = no setter on a read-only property.
+    InstanceMethod("setPointingCallback", &NPointingDevice::setPointingCallback)
   });
 
   constructor = Napi::Persistent(func);
@@ -82,6 +72,16 @@ NPointingDevice::NPointingDevice(const Napi::CallbackInfo& info) : Napi::ObjectW
   }
   std::string uri = info[0].ToString().Utf8Value();
   this->input = PointingDevice::create(uri);
+
+  addProperty<NPointingDevice>(info, "vendorID", &NPointingDevice::getVendorID);
+  addProperty<NPointingDevice>(info, "productID", &NPointingDevice::getProductID);
+  addProperty<NPointingDevice>(info, "vendor", &NPointingDevice::getVendor);
+  addProperty<NPointingDevice>(info, "product", &NPointingDevice::getProduct);
+  addProperty<NPointingDevice>(info, "updateFrequency", &NPointingDevice::getUpdateFrequency);
+  addProperty<NPointingDevice>(info, "resolution", &NPointingDevice::getResolution);
+  addProperty<NPointingDevice>(info, "uri", &NPointingDevice::getURI);
+  addProperty<NPointingDevice>(info, "expandedUri", &NPointingDevice::getExpandedURI);
+  addProperty<NPointingDevice>(info, "active", &NPointingDevice::isActive);
 }
 
 Napi::Object NPointingDevice::NewInstance(Napi::Env env, Napi::Value uri){

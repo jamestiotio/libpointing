@@ -35,13 +35,7 @@ Napi::Object NTransferFunction::Init(Napi::Env env, Napi::Object exports) {
     InstanceMethod("clearState", &NTransferFunction::clearState),
     InstanceMethod("setSubPixeling", &NTransferFunction::setSubPixeling),
     InstanceMethod("setHumanResolution", &NTransferFunction::setHumanResolution),
-    InstanceMethod("setCardinalitySize", &NTransferFunction::setCardinalitySize),
-    InstanceAccessor("uri", &NTransferFunction::getURI, NULL),
-    InstanceAccessor("subPixeling", &NTransferFunction::getSubPixeling, NULL),
-    InstanceAccessor("humanResolution", &NTransferFunction::getHumanResolution, NULL),
-    InstanceAccessor("cardinality", &NTransferFunction::getCardinality, NULL),
-    InstanceAccessor("widgetSize", &NTransferFunction::getWidgetSize, NULL),
-     //NULL = no setter on a read-only property.
+    InstanceMethod("setCardinalitySize", &NTransferFunction::setCardinalitySize)
   });
 
   constructor = Napi::Persistent(func);
@@ -71,12 +65,11 @@ NTransferFunction::NTransferFunction(const Napi::CallbackInfo& info) : Napi::Obj
   this->nInput = ninput;
   this->nOutput = noutput;
 
-  // NAN CODE:
-  //   func = new SubPixelFunction("subpixel:?isOn=false", uri, ninput->input, noutput->output);
-  //
-  // obj->nInput.Reset(info[1]);
-  // obj->nOutput.Reset(info[2]);
-  // obj->Wrap(info.This());
+  addProperty(info, "uri", &NTransferFunction::getURI);
+  addProperty(info, "subPixeling", &NTransferFunction::getSubPixeling);
+  addProperty(info, "humanResolution", &NTransferFunction::getHumanResolution);
+  addProperty(info, "cardinality", &NTransferFunction::getCardinality);
+  addProperty(info, "widgetSize", &NTransferFunction::getWidgetSize);
 }
 
 Napi::Object NTransferFunction::NewInstance(Napi::Env env, Napi::Value uri, Napi::Value input, Napi::Value output){
