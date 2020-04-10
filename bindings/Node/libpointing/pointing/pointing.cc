@@ -27,7 +27,7 @@ uv_idle_t idler;
 
 void perform_while_idle(uv_idle_t* handle)
 {
-  pointing::PointingDevice::idle(25);
+  pointing::PointingDevice::idle(4);
   // uv_idle_stop(handle);
 }
 
