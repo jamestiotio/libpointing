@@ -46,29 +46,16 @@
 			}],
 			['OS=="win"', {
 				"link_settings": {
-					"conditions": [
-						["target_arch == 'ia32'", {
-							'libraries': [
-								'-lsetupapi',
-								'-lhid',
-								'-luser32',
-								'-ladvapi32',
-                                '../../../../pointing/Release/pointing.lib'
-							]
-						}],
-						["target_arch == 'x64'", {
-							'libraries': [
-								'-lsetupapi',
-								'-lhid',
-								'-luser32',
-								'-ladvapi32',
-								'../../../../pointing/x64/Release/pointing.lib'
-							]
-						}]
-					]
-				 },
+					'libraries': [
+						'-lsetupapi',
+						'-lhid',
+						'-luser32',
+						'-ladvapi32',
+                        'C:/Program Files/libpointing/pointing.lib'
+    				]
+    			 },
 				"include_dirs": [
-					'../../..',
+					'C:/Program Files/libpointing',
                     "<!@(node -p \"require('node-addon-api').include\")"
 				],
 				'configurations': {
