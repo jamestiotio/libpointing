@@ -1,1 +1,6 @@
 nw
+*.o
+*.d
+*.a
+Makefile
+build/*
