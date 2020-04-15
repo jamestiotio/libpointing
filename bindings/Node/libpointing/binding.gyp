@@ -59,22 +59,14 @@
                     "<!@(node -p \"require('node-addon-api').include\")"
 				],
 				'configurations': {
-					'Debug': {
-						'msvs_settings': {
-							'VCCLCompilerTool': {
-								'RuntimeLibrary': '3' # /MDd
-							},
-						},
-					},
 					'Release': {
 						'msvs_settings': {
 							'VCCLCompilerTool': {
-								'RuntimeLibrary': '2' # /MD
+						        "RuntimeLibrary": "2"
 							},
 						},
 					},
 				},
-				"msvs_disabled_warnings": [ 4244, 4267 ],
 			}],
 		],
       'dependencies': [
