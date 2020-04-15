@@ -30,9 +30,11 @@ Makefile
 *.dSYM
 *pointing.node
 *target_wrapper.bat
+*.nupkg
 
 *node_modules*
 *build*
+!building-and-packaging
 
 *debug/
 *release/
@@ -42,6 +44,7 @@ Makefile
 moc_*.cpp
 ui_*.h
 qrc_*.cpp
+
 
 .loc
 .qmake.stash
