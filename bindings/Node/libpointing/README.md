@@ -8,10 +8,10 @@ Libpointing is an open-source cross-platform library that provides direct access
 
 ## Installation
 
-* Install [libpointing](http://libpointing.org)
+* Install [libpointing](https://github.com/INRIA/libpointing/wiki/Installation)
 * npm install libpointing
 
-Note that, `libpointing` with npm can be installed only on Mac OS and Linux.
+Works on Windows, macOS and Linux.
 
 ## Example
 
