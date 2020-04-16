@@ -2,7 +2,7 @@
 
 if (process.argv.length < 3)
 	console.log("Usage: pointingserver [start | stop]");
-else { 
+else {
 
 	var arg = (process.argv.length > 2) ? process.argv[2] : 'start';
 	var pidPath = __dirname + '/pointing.pid';
@@ -50,8 +50,9 @@ else {
 				var pid = parseInt(fs.readFileSync(pidPath, 'utf8'));
 				fs.unlinkSync(pidPath);
 				try {
-					process.kill(pid);
-					console.log('PointingServer was stopped');
+					processKill(pid, () => {
+						console.log('PointingServer was stopped');
+					});
 				}
 				catch (ex) {
 					if (ex.code == 'ESRCH') {
@@ -60,5 +61,17 @@ else {
 				}
 			}
 		});
+	}
+}
+
+function processKill(pid, callback){
+	var opsys = process.platform;
+	if (opsys == "win32") {
+		require('taskkill')(pid).then(() => {
+			callback()
+		});
+	} else {
+		process.kill(pid);
+		callback()
 	}
 }
