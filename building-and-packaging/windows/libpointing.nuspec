@@ -3,7 +3,7 @@
   <metadata>
     <id>libpointing</id>
     <title>Libpointing</title>
-    <version>2.1.0</version>
+    <version>1.0.8</version>
     <authors>Géry Casiez, Nicolas Roussel, Izzatbek Mukhanov</authors>
     <tags>control-display gain pointer acceleration pointing transfer-functions</tags>
     <summary>An open-source cross-platform library to get raw events from pointing devices and master transfer functions</summary>
