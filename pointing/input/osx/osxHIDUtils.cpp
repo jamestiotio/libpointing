@@ -32,7 +32,7 @@ namespace pointing {
 
   // -----------------------------------------------------------------------
 
-  static io_service_t
+ /* static io_service_t
   hidGetParentService(io_service_t service, io_name_t classname) {
     for (io_service_t result=service; result!=MACH_PORT_NULL;) {
       if (IOObjectConformsTo(result, classname)) {
@@ -47,7 +47,7 @@ namespace pointing {
       result = parent ;
     }
     return MACH_PORT_NULL ;
-  }
+  }*/
 
 #if 0
   static io_service_t
