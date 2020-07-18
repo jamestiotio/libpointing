@@ -32,7 +32,7 @@ namespace pointing {
 
   CFPropertyListRef
   getPropertyListFromFile(const char *path) {
-#if 1
+#if 0
     CFStringRef cfpath = CFStringCreateWithCStringNoCopy(kCFAllocatorDefault,
 							 path,
 							 kCFStringEncodingISOLatin1,
@@ -61,28 +61,42 @@ namespace pointing {
 							   NULL, NULL) ;
     CFRelease(xmldata) ;
 #else
-    // FIXME: possible replacement, when it works...
-    
     CFStringRef cfpath = CFStringCreateWithCStringNoCopy(kCFAllocatorDefault,
 							 path,
 							 kCFStringEncodingISOLatin1,
 							 kCFAllocatorNull) ;
     CFURLRef cfurl = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, cfpath, 
 						   kCFURLPOSIXPathStyle, false) ;
-    CFErrorRef *error= 0 ;
     CFReadStreamRef stream = CFReadStreamCreateWithFile(kCFAllocatorDefault, cfurl );
 
-    // FIXME: the following code fails to work, for unknown reason (yet)
+    CFRelease(cfurl) ;
+    CFRelease(cfpath) ;
+
+    if (CFReadStreamOpen(stream) == FALSE) {
+        std::cerr << "CFReadStreamOpen: error" << std::endl ;
+	CFRelease(stream) ;
+        return 0 ;
+    }
+    
+    CFErrorRef error = NULL ;
     CFPropertyListRef plist = CFPropertyListCreateWithStream(kCFAllocatorDefault,
 							     stream, 0 /* streamLength */,
 							     kCFPropertyListImmutable,
 							     NULL /* *format */,
-							     error /* *error*/) ;
-    // if (error) CFShow(error) ;
+							     &error /* *error*/) ;
+    // Handle the error
+    if (error) {
+    	/*
+    	CFString errordesc = CFErrorCopyDescription(error);
+	CFRelease(errordesc);
+	*/
+        std::cerr << "CFPropertyListCreateWithStream: error" << std::endl ;
+	CFRelease(stream) ;
+        return 0 ;
+    }
     
-    CFRelease(stream) ;
-    CFRelease(cfurl) ;
-    CFRelease(cfpath) ;    
+    CFReadStreamClose(stream) ;
+    CFRelease(stream) ;    
 #endif
 
     return plist ;
