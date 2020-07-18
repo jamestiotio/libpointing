@@ -3,15 +3,17 @@
   <metadata>
     <id>libpointing</id>
     <title>Libpointing</title>
-    <version>2.1.0</version>
+    <version>1.0.8</version>
     <authors>Géry Casiez, Nicolas Roussel, Izzatbek Mukhanov</authors>
+    <owners>Géry Casiez, Etienne Orieux</owners>
     <tags>control-display gain pointer acceleration pointing transfer-functions</tags>
     <summary>An open-source cross-platform library to get raw events from pointing devices and master transfer functions</summary>
     <releaseNotes>https://github.com/INRIA/libpointing/releases</releaseNotes>
     <docsUrl>https://github.com/INRIA/libpointing/wiki</docsUrl>
     <description>Libpointing is an open-source cross-platform library written in C++ that provides direct access to HID pointing devices and supports the design of pointing transfer functions.</description>
     <projectUrl>http://www.libpointing.org</projectUrl>
-    <packageSourceUrl>https://chocolatey.org/packages/libpointing</packageSourceUrl>
+    <licenseUrl>https://github.com/INRIA/libpointing/blob/master/LICENSE.md</licenseUrl>
+    <packageSourceUrl>https://github.com/INRIA/libpointing</packageSourceUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
   </metadata>
 </package>
