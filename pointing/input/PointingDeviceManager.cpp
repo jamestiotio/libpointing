@@ -34,11 +34,11 @@ namespace pointing
 {
 #define MAX(X, Y)           (((X) > (Y)) ? (X) : (Y))
 
-    PointingDeviceManager *PointingDeviceManager::singleManager = 0;
+    PointingDeviceManager *PointingDeviceManager::singleManager = nullptr;
 
     PointingDeviceManager *PointingDeviceManager::get()
     {
-        if (singleManager == NULL)
+        if (singleManager == nullptr)
         {
 #ifdef __APPLE__
             singleManager = new osxPointingDeviceManager();
@@ -86,7 +86,7 @@ namespace pointing
           if (pdd->desc.devURI == uri)
             return pdd;
       }
-      return NULL;
+      return nullptr;
     }
 
     void PointingDeviceManager::addDescriptor(PointingDeviceDescriptor &descriptor)

@@ -57,7 +57,7 @@ namespace pointing
 
     winPointingDeviceManager::winPointingDeviceManager()
     {
-        hThreads[0]=CreateThread(NULL, 0, Loop, LPVOID(this), 0, &dwThreadId);
+        hThreads[0]=CreateThread(nullptr, 0, Loop, LPVOID(this), 0, &dwThreadId);
         while(run==THREAD_UNDEFINED){Sleep(10);}
     }
 
@@ -102,11 +102,11 @@ namespace pointing
 
   HWND winPointingDeviceManager::rawInputInit()
   {
-    HWND tempHwnd = 0;
+    HWND tempHwnd = nullptr;
     WNDCLASSEX w;
     memset(&w, 0, sizeof(w));
     w.cbSize = sizeof(w);
-    w.lpfnWndProc = (WNDPROC)winPointingDeviceManager::rawInputProc;
+    w.lpfnWndProc = static_cast<WNDPROC>(winPointingDeviceManager::rawInputProc);
     w.lpszClassName = L"MyServiceWindowClass";
     ATOM atom = ::RegisterClassEx(&w);
     if (!atom){ throw std::runtime_error("Unable to register a new windows class for message processing"); }
@@ -119,7 +119,7 @@ namespace pointing
                            NULL,
                            NULL);
     if(!tempHwnd){ throw std::runtime_error("Unable to create a message window"); }
-    SetWindowLongPtr(tempHwnd, GWLP_USERDATA, (LONG_PTR)this);
+    SetWindowLongPtr(tempHwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
     RAWINPUTDEVICE Rid[1];
     Rid[0].usUsagePage = 0x01;
@@ -148,8 +148,8 @@ namespace pointing
 
       if (dev->lastX > 0 || dev->lastY > 0)
       {
-        *dx = roundf((pmouse->lLastX - dev->lastX) / dpx);
-        *dy = roundf((pmouse->lLastY - dev->lastY) / dpy);
+        *dx = static_cast<int>(roundf((pmouse->lLastX - dev->lastX) / dpx));
+        *dy = static_cast<int>(roundf((pmouse->lLastY - dev->lastY) / dpy));
       }
       // Save last values for the next callback
       dev->lastX = pmouse->lLastX;
@@ -180,23 +180,23 @@ namespace pointing
     {
       // We have stored in the GWL_USERDATA a pointer to the winPointingDevice. This object
       // is needed to route the event to the user provided callback and context.
-      winPointingDeviceManager* self=(winPointingDeviceManager*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+      winPointingDeviceManager* self=reinterpret_cast<winPointingDeviceManager*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
       switch(wParam)
       {
       case GIDC_ARRIVAL:
       {
           PointingDeviceDescriptor desc;
-          if (self->fillDescriptorInfo((HANDLE)lParam, desc))
+          if (self->fillDescriptorInfo(reinterpret_cast<HANDLE>(lParam), desc))
           {
               PointingDeviceData *pdd = new PointingDeviceData;
               pdd->desc = desc;
-              self->registerDevice((HANDLE)lParam, pdd);
+              self->registerDevice(reinterpret_cast<HANDLE>(lParam), pdd);
           }
           break;
       }
       case GIDC_REMOVAL:
-          self->unregisterDevice((HANDLE)lParam);
+          self->unregisterDevice(reinterpret_cast<HANDLE>(lParam));
           break;
       }
 
@@ -208,21 +208,21 @@ namespace pointing
 
       // We have stored in the GWL_USERDATA a pointer to the winPointingDevice. This object
       // is needed to route the event to the user provided callback and context.
-      winPointingDeviceManager* self=(winPointingDeviceManager*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+      winPointingDeviceManager* self=reinterpret_cast<winPointingDeviceManager*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
       // Retreive the raw input data...
-      GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize,
+      GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &dwSize,
                       sizeof(RAWINPUTHEADER));
       LPBYTE lpb = new BYTE[dwSize];
-      if (lpb == NULL)
+      if (lpb == nullptr)
         return 0;
 
-      if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize,
+      if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, lpb, &dwSize,
                           sizeof(RAWINPUTHEADER)) != dwSize)
         throw std::runtime_error("GetRawInputData does not return correct size !\n");
       //ON_ERROR("GetRawInputData does not return correct size !\n");
 
-      RAWINPUT* raw = (RAWINPUT*)lpb;
+      RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb);
       if (raw->header.dwType == RIM_TYPEMOUSE)
       {
         //std::cout << "Input frame  from: " << std::hex << raw->header.hDevice << std::endl;
@@ -258,7 +258,7 @@ namespace pointing
 
               dev->registerTimestamp(now, dx, dy);
 
-              if (dev->callback != NULL)
+              if (dev->callback != nullptr)
                 dev->callback(dev->callback_context, now, dx, dy, dev->buttons);
             }
           }

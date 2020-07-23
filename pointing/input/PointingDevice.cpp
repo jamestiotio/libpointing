@@ -68,7 +68,7 @@ namespace pointing {
     }
 
     if (device_uri.empty()) 
-      device_uri = (char *)"any:?debugLevel=1" ;
+      device_uri = const_cast<char *>("any:?debugLevel=1") ;
 
     URI uri(device_uri) ;
     // uri.debug(std::cerr) ;
@@ -101,7 +101,7 @@ namespace pointing {
   }
 
   int PointingDevice::mm2counts(double millimeters) const {
-    return (int)(millimeters * getResolution() / 25.4);
+    return static_cast<int>(millimeters * getResolution() / 25.4);
   }
 
   double PointingDevice::counts2mm(int counts) const {
@@ -112,7 +112,7 @@ namespace pointing {
   }
 
   int PointingDevice::in2counts(double inches) const {
-    return (int)(inches * getResolution());
+    return static_cast<int>(inches * getResolution());
   }
 
   double PointingDevice::counts2in(int counts) const {
@@ -125,7 +125,7 @@ namespace pointing {
   void
   PointingDevice::idle(int milliseconds) {
 #ifdef _WIN32
-    Sleep(milliseconds) ;
+    Sleep(static_cast<DWORD>(milliseconds)) ;
 #endif
 #ifdef __linux__
     usleep(milliseconds*1000) ;

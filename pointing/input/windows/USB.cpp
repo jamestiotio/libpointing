@@ -205,7 +205,7 @@ namespace pointing {
       if( GetRawInputDeviceInfoA(h, RIDI_DEVICENAME, NULL, &pcbSize) != 0 ){
         throw std::runtime_error("Unable to retreive the size of the device name ");
       }
-      std::auto_ptr<CHAR> buffer(new CHAR[pcbSize+1]);
+      std::unique_ptr<CHAR> buffer(new CHAR[pcbSize+1]);
       if(GetRawInputDeviceInfoA(h, RIDI_DEVICENAME, buffer.get(), &pcbSize) <= 0 ){
         throw std::runtime_error("Unable to retreive the name of the device ");
       }
