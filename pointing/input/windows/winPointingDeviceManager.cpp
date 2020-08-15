@@ -106,7 +106,7 @@ namespace pointing
     WNDCLASSEX w;
     memset(&w, 0, sizeof(w));
     w.cbSize = sizeof(w);
-    w.lpfnWndProc = static_cast<WNDPROC>(winPointingDeviceManager::rawInputProc);
+    w.lpfnWndProc =  reinterpret_cast<WNDPROC>(winPointingDeviceManager::rawInputProc);
     w.lpszClassName = L"MyServiceWindowClass";
     ATOM atom = ::RegisterClassEx(&w);
     if (!atom){ throw std::runtime_error("Unable to register a new windows class for message processing"); }
