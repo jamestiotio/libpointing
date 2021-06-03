@@ -6,8 +6,8 @@ from pylibpointing import PointingDeviceManager, PointingDeviceDescriptor
 import sys
 
 def cb_man(desc, wasAdded):
-	print desc
-	print "was added" if wasAdded else "was removed"
+	print(desc)
+	print("was added" if wasAdded else "was removed")
 
 
 pm = PointingDeviceManager()
@@ -15,7 +15,7 @@ PointingDevice.idle(100)
 pm.addDeviceUpdateCallback(cb_man)
 
 for desc in pm:
-	print desc
+	print(desc)
 
 """
 for desc in pm:
@@ -24,9 +24,9 @@ for desc in pm:
 	pdev = PointingDevice(desc.uri)
 """
 
-pdev = PointingDevice("any:")
+pdev = PointingDevice(b"any:")
 ddev = DisplayDevice.create("any:")
-tfct = TransferFunction("system:", pdev, ddev)
+tfct = TransferFunction(b"system:", pdev, ddev)
 
 def cb_fct(timestamp, dx, dy, button):
     rx,ry=tfct.applyd(dx, dy, timestamp)

@@ -15,8 +15,8 @@ if system == 'Darwin':
                         libraries=['pointing'],
                         include_dirs=[libpointing],
                         library_dirs=["./",libpointing+"pointing"],
-                        extra_compile_args=["-stdlib=libc++", "-mmacosx-version-min=10.7", "-std=c++11"],
-                        extra_link_args=["-mmacosx-version-min=10.7", "-framework", "CoreGraphics"],
+                        extra_compile_args=["-stdlib=libc++", "-mmacosx-version-min=10.10", "-std=c++17"],
+                        extra_link_args=["-mmacosx-version-min=10.10", "-framework", "CoreGraphics"],
                         )]
 elif system == 'Linux':
     ext_modules = [Extension(
