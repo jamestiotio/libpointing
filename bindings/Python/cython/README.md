@@ -44,4 +44,4 @@ to have list of the possibly missing libraries.
 
 # Creating the libpointing module for pip
 
-1. `python setupForPip.py bdist_wheel`
+`python setupForPip.py bdist_wheel`

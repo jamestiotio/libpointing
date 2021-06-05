@@ -7,7 +7,7 @@ setuptools.setup(
      name='libpointing',  
      version='1.0.8',
      provides=['libpointing'],
-     package_data={'': ['libpointing.cpython-39-darwin.so']}, 
+     package_data={'': ['libpointing.cpython-39-darwin.so, libpointing.so']}, 
      author="Géry Casiez",
      author_email="gery.casiez@univ-lille.fr",
      description="Python binding for libpointing.",
