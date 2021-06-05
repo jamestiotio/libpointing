@@ -1,5 +1,10 @@
-# -*- coding: utf-8 -*-
+# Python binding for libpointing library
 
+Visit [libpointing.org](https://libpointing.org) to know more about the library and the [Python binding](https://github.com/INRIA/libpointing/tree/master/bindings/Python/cython])
+
+Here is a minimal example:
+
+```
 from libpointing import PointingDevice, DisplayDevice, TransferFunction
 from libpointing import PointingDeviceManager, PointingDeviceDescriptor
 
@@ -37,3 +42,4 @@ pdev.setCallback(cb_fct)
 print("Move the mouse of Press CTRL+C to exit")
 for i in range(0, 10000):
     PointingDevice.idle(1)
+```

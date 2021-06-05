@@ -1,6 +1,7 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
+from Cython.Build import cythonize
 import platform
 
 libpointing = '../../../'
@@ -9,8 +10,8 @@ system = platform.system()
 
 if system == 'Darwin':
     ext_modules = [Extension(
-                        "pylibpointing",
-                        ["pylibpointing.pyx"],
+                        "libpointing.libpointing",
+                        ["libpointing.pyx"],
                         language="c++",
                         libraries=['pointing'],
                         include_dirs=[libpointing],
@@ -20,8 +21,8 @@ if system == 'Darwin':
                         )]
 elif system == 'Linux':
     ext_modules = [Extension(
-                         "pylibpointing",
-                         ["pylibpointing.pyx"],
+                         "libpointing.libpointing",
+                         ["libpointing.pyx"],
                          language="c++",
                          libraries=['pointing', "stdc++", "udev", "X11", "Xrandr"],
                          include_dirs=[
@@ -31,8 +32,8 @@ elif system == 'Linux':
                          )]
 elif system == 'Windows':
     ext_modules = [Extension(
-                         "pylibpointing",
-                         ["pylibpointing.pyx"],
+                         "libpointing.libpointing",
+                         ["libpointing.pyx"],
                          language="c++",
                          libraries=['pointing', "user32", "advapi32", "setupapi", "hid"],
                          include_dirs=[
@@ -42,8 +43,8 @@ elif system == 'Windows':
                          )]
 else:
     ext_modules = [Extension(
-                         "pylibpointing",
-                         ["pylibpointing.pyx"],
+                         "libpointing.libpointing",
+                         ["libpointing.pyx"],
                          language="c++",
                          libraries=['pointing', "stdc++"],
                          include_dirs=[
@@ -53,7 +54,7 @@ else:
                          )]
 
 setup(
-  name='pylibpointing',
+  name='libpointing',
   cmdclass={'build_ext': build_ext},
-  ext_modules=ext_modules
+  ext_modules=cythonize(ext_modules, compiler_directives={'language_level' : "3"})
 )

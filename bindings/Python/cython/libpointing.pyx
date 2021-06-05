@@ -15,7 +15,8 @@ cdef extern from "Python.h":
      ctypedef int PyGILState_STATE
      PyGILState_STATE PyGILState_Ensure()
      void PyGILState_Release(PyGILState_STATE gstate)
-     void PyEval_InitThreads()
+     # from Python 3.9 the function now does nothing
+     # void PyEval_InitThreads()
      
 	 
 cdef void defaultCallback(void *context, cpointingdevice.inttime timestamp, 
@@ -87,7 +88,7 @@ cdef class PointingDevice(object):
     cdef object pycallback_
     
     def __cinit__(self, uri):
-        PyEval_InitThreads()
+        # PyEval_InitThreads()
         pycallback_=None
         self.thiscptr_ = cpointingdevice.create(uri)
         self.thiscptr_.setPointingCallback(defaultCallback, <void *>self)
@@ -332,7 +333,7 @@ cdef class TransferFunction(object):
         funcUri.load(uriString)
 
         cdef curi.URI subPixURI
-        subPixURI.load("subpixel:?isOn=false")
+        #subPixURI.load("subpixel:?isOn=false")
 
         self.thiscptr_ = new csubpixelfunction.SubPixelFunction(subPixURI, funcUri, iptr, dptr)
 
