@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM ubuntu:impish
 
 ARG BUILD_DATE
 
@@ -7,7 +7,9 @@ LABEL maintainer="Géry Casiez <gery.casiez@univ-lille.fr>" \
 	  version="1.0" \
 	  org.label-schema.build-date=$BUILD_DATE
 
-RUN apt-get update && apt-get install -y \
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	sudo \
 	apt-utils \ 
 	apt-transport-https \
@@ -23,14 +25,11 @@ RUN apt-get update && apt-get install -y \
 	vim \
 	git \
 	qtbase5-dev \
-	qt5-default \
-	qt5-qmake \
 	libxrandr-dev \
 	libudev-dev \
-	cython \
 	dialog \
-	apt-utils \
-	libxi-dev
+	libxi-dev \
+	freeglut3-dev
 
 RUN pip3 --no-cache-dir install cython
 
