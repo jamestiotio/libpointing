@@ -1,12 +1,10 @@
 # Python binding for libpointing library
 
-Works with Python 3.9 on macOS and Windows and Python 3.7 on Linux
-
 ```
 pip install libpointing
 ```
 
-Visit [libpointing.org](https://libpointing.org) to know more about the library and the [Python binding](https://github.com/INRIA/libpointing/tree/master/bindings/Python/cython])
+Visit [libpointing.org](https://libpointing.org) to know more about the library and the [Python binding](https://github.com/INRIA/libpointing/tree/master/bindings/Python/cython)
 
 Here is a minimal example:
 

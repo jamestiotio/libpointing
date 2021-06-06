@@ -5,9 +5,10 @@ with open("PIP.md", "r") as fh:
 
 setuptools.setup(
      name='libpointing',  
-     version='1.0.8',
+     version='1.0.8.2',
      provides=['libpointing'],
-     package_data={'': ['libpointing.cpython-39-darwin.so', 'libpointing.so', 'libpointing.cp39-win_amd64.pyd']}, 
+     python_requires="==3.9.*",
+     package_data={'': ['libpointing.cpython-39-darwin.so', 'libpointing.cpython-39-x86_64-linux-gnu.so', 'libpointing.cp39-win_amd64.pyd']}, 
      author="Géry Casiez",
      author_email="gery.casiez@univ-lille.fr",
      description="Python binding for libpointing.",
