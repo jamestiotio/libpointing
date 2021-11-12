@@ -278,7 +278,7 @@ namespace pointing {
       if (m[(int)c]&flags)
 	result.append(&c,1) ;
       else {
-	char tmp[3] ;
+	char tmp[4] ;
 	sprintf(tmp,"%%%c%c", h[c>>4], h[c&0x0F]) ;
 	result.append(tmp,3) ;
       }
