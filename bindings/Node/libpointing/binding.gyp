@@ -35,14 +35,15 @@
 			}],
 			['OS=="linux"', {
 				"link_settings": {
-				'libraries': [
-				   '/usr/lib/pointing.so'
-				 ]},
+					'libraries': [
+					   '-lpointing',
+					   '-L/usr/local/lib'
+					 ]
+				 },
 				"include_dirs": [
-                   '-lpointing',
-				   '-L/usr/local/lib',
+					'/usr/local/include',
 					"<!@(node -p \"require('node-addon-api').include\")"
-				]
+				],
 			}],
 			['OS=="win"', {
 				"link_settings": {
