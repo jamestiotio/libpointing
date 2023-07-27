@@ -2,7 +2,7 @@ all: pointing
 	python3 setup.py build_ext --inplace
 
 pointing:
-	cd ../../../ && qmake && make
+	cd ../../../pointing && qmake && make
 	
 clean:
 	rm -rf build

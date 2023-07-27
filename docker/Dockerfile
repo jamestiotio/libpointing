@@ -1,4 +1,4 @@
-FROM ubuntu:impish
+FROM ubuntu:mantic
 
 ARG BUILD_DATE
 
@@ -19,6 +19,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	apt-utils \
 	python3 \
 	python3-pip \
+	cython3 \
 	cron \
 	wget \
 	ssh \
@@ -31,6 +32,5 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	libxi-dev \
 	freeglut3-dev
 
-RUN pip3 --no-cache-dir install cython
 
 
