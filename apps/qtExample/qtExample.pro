@@ -6,7 +6,7 @@
 
 TEMPLATE  = app
 CONFIG   += qt warn_on link_prl
-QT += opengl
+QT += openglwidgets
 
 POINTING = ../..
 include($$POINTING/pointing/pointing.pri)

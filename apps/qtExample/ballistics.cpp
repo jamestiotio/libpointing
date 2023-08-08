@@ -60,11 +60,12 @@ main(int argc, char **argv) {
     argv += optind ;
 
 #if BALLISCTICSPLAYGROUND_USE_OPENGL
-    std::cerr << "OpenGL-based BallisticsPlayground will use a swap interval of 0" << std::endl ;
+    // FIXME: this code worked with Qt5 but no longer work with Qt6
+    /*std::cerr << "OpenGL-based BallisticsPlayground will use a swap interval of 0" << std::endl ;
     QGLFormat fmt ;
     fmt.setDirectRendering(true) ; 
     fmt.setSwapInterval(0) ;
-    QGLFormat::setDefaultFormat(fmt) ;
+    QGLFormat::setDefaultFormat(fmt) ;*/
 #endif
 
     PointingDevice *input = PointingDevice::create(input_uri ? input_uri : "any:?") ;

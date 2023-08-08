@@ -19,7 +19,7 @@ win32-msvc* {
 
 macx {
     # Needed for IOHIDDeviceRegisterInputReportWithTimeStampCallback
-    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.10
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
 }
 
 # Compile with c++11 on unix (Qt5/Qt4)

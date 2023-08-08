@@ -18,7 +18,7 @@
 
 #include <pointing/transferfunctions/TransferFunction.h>
 
-#include <QGLWidget>
+#include <QOpenGLWidget>
 
 #include <QStaticText>
 #include <QKeyEvent>
@@ -46,7 +46,7 @@ using namespace pointing;
 // ---------------------------------------------------------------------
 
 #if BALLISCTICSPLAYGROUND_USE_OPENGL
-#define BALLISCTICSPLAYGROUND_BASECLASS QGLWidget
+#define BALLISCTICSPLAYGROUND_BASECLASS QOpenGLWidget
 #else
 #define BALLISCTICSPLAYGROUND_BASECLASS QWidget
 #endif
