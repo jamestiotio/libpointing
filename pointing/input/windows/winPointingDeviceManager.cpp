@@ -172,7 +172,7 @@ namespace pointing
   // Static function that process the rawinput events and let the others processed by the default processor.
   // hwnd field stores the window handler, uMsg is the event type, wParam and lParam are additional
   // parameters.
-  LONG APIENTRY winPointingDeviceManager::rawInputProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+  LRESULT winPointingDeviceManager::rawInputProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
     // Check if we have received a rawinput event
     // This can be either insertion/removal of a device or a message from one of them.

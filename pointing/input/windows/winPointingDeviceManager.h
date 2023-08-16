@@ -43,7 +43,7 @@ namespace pointing
         void processMessage(MSG *msg);
         HWND msghwnd_;
 
-        static LONG APIENTRY rawInputProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+        static LRESULT rawInputProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
         HWND rawInputInit();
 
         bool fillDescriptorInfo(HANDLE h, PointingDeviceDescriptor &desc);
