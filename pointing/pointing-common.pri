@@ -23,9 +23,10 @@ macx {
     # QMAKE_MAC_SDK = macosx10.15
 }
 
-# Compile with c++11 on unix (Qt5/Qt4)
+# Compile with c++11 on unix (Qt5/Qt4). Qt6 requires c++17
 unix {
-    QMAKE_CXXFLAGS += -std=c++11
+    # QMAKE_CXXFLAGS += -std=c++11
+    CONFIG += c++17
 }
 
 windows {

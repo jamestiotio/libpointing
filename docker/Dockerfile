@@ -1,4 +1,4 @@
-FROM ubuntu:mantic
+FROM ubuntu:latest
 
 ARG BUILD_DATE
 
@@ -25,7 +25,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	ssh \
 	vim \
 	git \
-	qtbase5-dev \
+	qt6-base-dev \
 	libxrandr-dev \
 	libudev-dev \
 	dialog \

@@ -1,0 +1,23 @@
+name: Linux
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container: casiez/libpointing
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: compile
+      run: qmake6 && make
+    - name: Save the compile library
+      uses: actions/upload-artifact@v3
+      with:
+        name: libpointing
+        path: pointing/libpointing.a
