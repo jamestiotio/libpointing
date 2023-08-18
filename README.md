@@ -1,3 +1,5 @@
+[![Linux](https://github.com/INRIA/libpointing/actions/workflows/linux.yml/badge.svg)](https://github.com/INRIA/libpointing/actions/workflows/linux.yml)
+
 # Libpointing
 
 An open-source cross-platform library to get raw events from pointing devices and master transfer functions.
