@@ -1,4 +1,8 @@
 [![Linux](https://github.com/INRIA/libpointing/actions/workflows/linux.yml/badge.svg)](https://github.com/INRIA/libpointing/actions/workflows/linux.yml)
+[![PyPI Version](https://img.shields.io/pypi/v/libpointing)](https://pypi.org/project/libpointing/)
+[![NPM Version](https://badge.fury.io/js/libpointing.svg?style=flat)](https://npmjs.org/package/libpointing)
+[![Homebrew Version](https://img.shields.io/homebrew/v/libpointing.svg)](https://formulae.brew.sh/formula/libpointing)
+
 
 # Libpointing
 
