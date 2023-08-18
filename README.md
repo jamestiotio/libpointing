@@ -1,8 +1,5 @@
 # Libpointing
 
-[![Build Status](https://travis-ci.org/INRIA/libpointing.svg?branch=master)](https://travis-ci.org/INRIA/libpointing)
-[![Build status](https://ci.appveyor.com/api/projects/status/91gs9qfhrko993ld?svg=true)](https://ci.appveyor.com/project/casiez/libpointing)
-
 An open-source cross-platform library to get raw events from pointing devices and master transfer functions.
 
 ## Description
