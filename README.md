@@ -17,6 +17,8 @@ Libpointing is an open-source cross-platform library written in C++ that provide
 
 - If you use libpointing for academic purposes, please cite: Casiez, G. & Roussel, N. (2011). No more bricolage! Methods and tools to characterize, replicate and compare pointing transfer functions. In proceedings of UIST'11, the 24th ACM Symposium on User Interface Software and Technology, 603-614. ACM Press. [DOI](http://dx.doi.org/10.1145/2047196.2047276)
 
+[![DOI](https://img.shields.io/badge/doi-10.1145%2F2047196.2047276-blue)](https://doi.org/10.1145/2047196.2047276)
+
 ```
 @inproceedings{Casiez:2011:NMB:2047196.2047276,
  author = {Casiez, G{\'e}ry and Roussel, Nicolas},
