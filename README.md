@@ -1,9 +1,10 @@
-[![Linux](https://github.com/INRIA/libpointing/actions/workflows/linux.yml/badge.svg)](https://github.com/INRIA/libpointing/actions/workflows/linux.yml)
 [![PyPI Version](https://img.shields.io/pypi/v/libpointing)](https://pypi.org/project/libpointing/)
 [![NPM Version](https://badge.fury.io/js/libpointing.svg?style=flat)](https://npmjs.org/package/libpointing)
 [![Homebrew Version](https://img.shields.io/homebrew/v/libpointing.svg)](https://formulae.brew.sh/formula/libpointing)
 [![choco-shield](https://img.shields.io/chocolatey/v/libpointing)](https://community.chocolatey.org/packages/libpointing)
 
+[![Linux](https://github.com/INRIA/libpointing/actions/workflows/linux.yml/badge.svg)](https://github.com/INRIA/libpointing/actions/workflows/linux.yml)
+[![macOS](https://github.com/INRIA/libpointing/actions/workflows/macOS.yml/badge.svg)](https://github.com/INRIA/libpointing/actions/workflows/macOS.yml)
 
 # Libpointing
 
